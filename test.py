@@ -111,10 +111,6 @@ class HotGritsServer(paramiko.ServerInterface):
 
         self.log.critical('No security checks for shell commands')
 
-        ch_stdin = channel.makefile('rb')
-        ch_stdout = channel.makefile('wb')
-        ch_stderr = channel.makefile_stderr('wb')
-
         p = subprocess.Popen(
             cmd,
             stdin=subprocess.PIPE,
@@ -125,9 +121,9 @@ class HotGritsServer(paramiko.ServerInterface):
         p.args = cmd
 
         forwards = [
-            spawn(forward, ch_stdin, p.stdin),
-            spawn(forward, p.stdout, ch_stdout),
-            spawn(forward, p.stderr, ch_stderr)
+            spawn(forward, channel.makefile('rb'), p.stdin),
+            spawn(forward, p.stdout, channel.makefile('wb')),
+            spawn(forward, p.stderr, channel.makefile_stderr('wb'))
         ]
 
         # wait for process completion, close channel afterwards
