@@ -21,7 +21,8 @@ setup(
     url='http://github.com/mbr/githome',
     license='MIT',
     packages=find_packages(exclude=['tests']),
-    install_requires=['gevent', 'paramiko', 'logbook', 'click', 'pathlib'],
+    install_requires=['gevent', 'paramiko', 'logbook', 'click', 'pathlib',
+                      'sqlalchemy'],
     entry_points={
         'console_scripts': [
             'githome = githome.cmd:cli',
