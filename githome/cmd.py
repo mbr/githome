@@ -1,3 +1,4 @@
+import click
 from gevent import spawn
 from logbook import StderrHandler
 import paramiko
@@ -6,7 +7,13 @@ from githome.server import SSHServer
 from githome.util import heartbeat, readable_formatter
 
 
-def run_server():
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
+def server():
     spawn(heartbeat)
 
     handler = StderrHandler()
