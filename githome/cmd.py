@@ -1,5 +1,3 @@
-import githome  # for monkey patches
-
 from gevent import spawn
 from logbook import StderrHandler
 import paramiko
@@ -7,7 +5,8 @@ import paramiko
 from githome.server import SSHServer
 from githome.util import heartbeat, readable_formatter
 
-if __name__ == '__main__':
+
+def run_server():
     spawn(heartbeat)
 
     handler = StderrHandler()
