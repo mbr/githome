@@ -8,7 +8,8 @@ from logbook import Logger, StderrHandler
 from logbook.handlers import DEFAULT_FORMAT_STRING
 import shlex
 
-from gevent import event, socket, spawn, local, subprocess, sleep
+from gevent import event, socket, spawn, local, subprocess, sleep, select
+from gevent.os import nb_read, make_nonblocking
 import paramiko
 
 
@@ -67,13 +68,26 @@ def fmt_addr(addr):
     return '{}:{}'.format(*addr)
 
 
-def forward(src, dest):
+def forward_recv(recv, dest, bufsize=4096):
     while True:
-        buf = src.read()
+        buf = recv(bufsize)
         if not buf:
             dest.close()
             break
         dest.write(buf)
+        dest.flush()
+
+
+def forward_send(src, sendall):
+    fd = src.fileno()
+    make_nonblocking(fd)
+
+    while True:
+        buf = nb_read(fd, 4096)
+        if not buf:
+            break
+
+        sendall(buf)
 
 
 class HotGritsServer(paramiko.ServerInterface):
@@ -120,11 +134,9 @@ class HotGritsServer(paramiko.ServerInterface):
         )
         p.args = cmd
 
-        forwards = [
-            spawn(forward, channel.makefile('rb'), p.stdin),
-            spawn(forward, p.stdout, channel.makefile('wb')),
-            spawn(forward, p.stderr, channel.makefile_stderr('wb'))
-        ]
+        spawn(forward_recv, channel.recv, p.stdin),
+        spawn(forward_send, p.stdout, channel.sendall),
+        spawn(forward_send, p.stderr, channel.sendall_stderr)
 
         # wait for process completion, close channel afterwards
         spawn(self.cleanup, p, channel)
