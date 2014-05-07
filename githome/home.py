@@ -1,34 +1,59 @@
+import gevent
 from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
 
-from .model import Base
+from .model import Base, User
 
 
 class GitHome(object):
-    def __init__(self, path):
-        self.path = path
+    @staticmethod
+    def _make_log_path(path):
+        return path / 'log'
+
+    @staticmethod
+    def _make_repo_path(path):
+        return path / 'repos'
+
+    @staticmethod
+    def _make_db_path(path):
+        return path / 'githome.sqlite'
 
     @property
     def log_path(self):
-        return self.path / 'log'
+        return self._make_log_path(self.path)
 
     @property
     def repo_path(self):
-        return self.path / 'repos'
+        return self._make_repo_path(self.path)
 
     @property
     def db_path(self):
-        return self.path / 'githome.sqlite'
+        return self._make_db_path(self.path)
 
     @property
     def dsn(self):
         return 'sqlite:///{}'.format(self.db_path)
 
-    def create_engine(self, echo=False):
-        return create_engine(self.dsn, echo=echo)
+    def __init__(self, path):
+        self.path = path
+        self.bind = create_engine(self.dsn)
+        self.session = scoped_session(sessionmaker(bind=self.bind),
+                                      scopefunc=gevent.getcurrent)
 
-    def initialize(self, echo=False):
-        self.log_path.mkdir()
-        self.repo_path.mkdir()
+    def get_user_by_name(self, name):
+        return self.session.query(User).filter_by(name=name.lower()).first()
 
-        engine = self.create_engine(echo=echo)
-        Base.metadata.create_all(bind=engine)
+    @classmethod
+    def check(cls, path):
+        return cls._make_db_path(path).exists()
+
+    @classmethod
+    def initialize(cls, path):
+        cls._make_log_path(path).mkdir()
+        cls._make_repo_path(path).mkdir()
+
+        gh = cls(path)
+        Base.metadata.create_all(bind=gh.bind)
+
+    def __repr__(self):
+        return '{0.__class__.__name__}(path={0.path!r})'.format(self)

@@ -25,7 +25,7 @@ setup(
                       'sqlalchemy'],
     entry_points={
         'console_scripts': [
-            'githome = githome.cmd:cli',
+            'githome = githome.cmd:run_cli',
         ],
     }
 )
