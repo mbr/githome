@@ -116,6 +116,12 @@ class HotGritsServer(paramiko.ServerInterface):
         return paramiko.OPEN_SUCCEEDED
 
     def check_channel_exec_request(self, channel, command):
+        VALID_COMMANDS = [
+            'git-receive-pack',
+            'git-upload-pack',
+            'git-upload-archive',
+        ]
+
         # this is the only kind of channel we allow; executing a command
         cmd = shlex.split(command)
 
@@ -123,7 +129,10 @@ class HotGritsServer(paramiko.ServerInterface):
             cmd, channel.get_id()
         ))
 
-        self.log.critical('No security checks for shell commands')
+        # check if command is valid
+        if not cmd[0] in VALID_COMMANDS:
+            self.log.warning('Attempted illegal command: {!r}'.format(cmd))
+            return False
 
         p = subprocess.Popen(
             cmd,
