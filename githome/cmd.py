@@ -6,9 +6,9 @@ import pathlib
 import sys
 
 from .home import GitHome
-from .model import User
+from .model import User, PublicKey
 from .server import SSHServer
-from .util import readable_formatter
+from .util import readable_formatter, fmt_key
 
 
 @click.group()
@@ -51,7 +51,7 @@ def user():
     pass
 
 
-@user.command('create')
+@user.command('add')
 @click.argument('name')
 @click.pass_obj
 def create_user(obj, name):
@@ -85,12 +85,61 @@ def delete_user(obj, name):
 
 
 @user.command('list')
+@click.option('-k', '--keys', is_flag=True, default=False)
 @click.pass_obj
-def list_users(obj):
+def list_users(obj, keys):
     gh = obj['githome']
 
     for user in gh.session.query(User).order_by(User.id):
-        print '{user.id:4d} {user.name}'.format(user=user)
+        line = '{user.id:4d} {user.name:20s}'.format(user=user)
+
+        if keys and user.public_keys:
+            line += ' {}'.format(fmt_key(user.public_keys[0].pkey))
+        click.echo(line)
+
+        if len(user.public_keys) > 1:
+            for key in user.public_keys[1:]:
+                click.echo('{0:25s} {}'.format('', fmt_key(key.pkey)))
+
+
+@cli.group()
+def key():
+    pass
+
+
+@key.command('add')
+@click.argument('username')
+@click.pass_obj
+def add_key(obj, username):
+    log = Logger('add_key')
+
+    gh = obj['githome']
+
+    user = gh.get_user_by_name(username)
+
+    if not user:
+        log.critical('No such user: {}'.format(username))
+
+    log.info('Reading key from stdin...')
+    key = PublicKey(data=sys.stdin.read(), user=user)
+
+    gh.session.add(key)
+    gh.session.commit()
+
+    log.info('Added key {} for user {}'.format(fmt_key(key.pkey),
+                                               key.user.name))
+
+
+@key.command('remove')
+@click.argument('user')
+@click.argument('fingerprint')
+@click.pass_obj
+def remove_key(obj, username):
+    log = Logger('remove_key')
+
+    gh = obj['githome']
+
+    #
 
 
 @cli.command()
@@ -106,8 +155,7 @@ def init(path):
         log.info('Created {}'.format(path))
 
     # initialize
-    gh = GitHome(path)
-    gh.initialize()
+    GitHome.initialize(path)
     log.info('Initialized new githome in {}'.format(path))
 
 
