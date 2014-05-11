@@ -124,26 +124,46 @@ def add_key(obj, username, keyfiles):
 
     if not user:
         log.critical('No such user: {}'.format(username))
+        sys.exit(1)
 
-    log.info('Reading key from stdin...')
-    key = PublicKey(data=sys.stdin.read(), user=user)
+    for keyfile in keyfiles:
+        for line in keyfile:
+            line = line.strip()
+            if not line:
+                continue
 
-    gh.session.add(key)
+            pkey = SSHKey.from_pubkey_line(line)
+            _k = gh.get_key_by_fingerprint(pkey.fingerprint)
+            if _k:
+                log.warning('Key {} ignored, already registered for {}'.format(
+                    pkey.readable_fingerprint, _k.user.name
+                ))
+                continue
+
+            log.info('Adding key {} to user {}...'.format(
+                pkey.readable_fingerprint, user.name)
+            )
+            k = PublicKey.from_pkey(pkey)
+            k.user = user
+            gh.session.add(k)
+
     gh.session.commit()
 
-    log.info('Added key {} for user {}'.format(fmt_key(key.pkey),
-                                               key.user.name))
 
-
-@key.command('remove')
-@click.argument('user')
-@click.argument('fingerprint')
+@key_group.command('remove')
+@click.argument('fingerprints', nargs=-1)
 @click.pass_obj
-def remove_key(obj, username):
+def remove_key(obj, fingerprints):
     log = Logger('remove_key')
 
     gh = obj['githome']
 
+    for fingerprint in fingerprints:
+        key = gh.get_key_by_fingerprint(fingerprint.replace(':', ''))
+
+        if not key:
+            log.warning('Key {} not found.'.format(fingerprint))
+            continue
     #
 
 
