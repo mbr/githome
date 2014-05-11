@@ -3,6 +3,8 @@ from binascii import hexlify
 from sqlalchemy import Column, Integer, String, ForeignKey, LargeBinary
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
+from sshkeys import Key as SSHKey
+
 
 Base = declarative_base()
 Session = sessionmaker()
@@ -26,17 +28,13 @@ class PublicKey(Base):
     __tablename__ = 'public_key'
 
     fingerprint = Column(String, primary_key=True)
-    user_id = Column(Integer, ForeignKey(User.id), primary_key=True)
+    user_id = Column(Integer, ForeignKey(User.id), nullable=False)
     user = relationship(User, backref='public_keys')
     data = Column(LargeBinary, nullable=False)
 
-    def __init__(self, data, user=None):
-        self.data = data
-        self.fingerprint = hexlify(self.pkey.get_fingerprint())
-        self.user = user
+    @classmethod
+    def from_pkey(cls, pkey):
+        return cls(data=pkey.data, fingerprint=hexlify(pkey.fingerprint))
 
-    @property
-    def pkey(self):
-        if not hasattr(self, '_pkey'):
-            self._pkey = RSAKey(data=self.data)
-        return self._pkey
+    def as_pkey(self, comment=None):
+        return SSHKey(self.data, comment)

@@ -1,7 +1,9 @@
+from binascii import hexlify
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from .model import Base, User
+from .model import Base, User, PublicKey
 
 
 class GitHome(object):
@@ -36,11 +38,13 @@ class GitHome(object):
     def __init__(self, path):
         self.path = path
         self.bind = create_engine(self.dsn)
-        self.session = scoped_session(sessionmaker(bind=self.bind),
-                                      scopefunc=gevent.getcurrent)
+        self.session = scoped_session(sessionmaker(bind=self.bind))
 
     def get_user_by_name(self, name):
         return self.session.query(User).filter_by(name=name.lower()).first()
+
+    def get_key_by_fingerprint(self, fingerprint):
+        return self.session.query(PublicKey).get(hexlify(fingerprint))
 
     @classmethod
     def check(cls, path):
