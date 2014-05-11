@@ -94,12 +94,16 @@ def list_users(obj, keys):
         line = '{user.id:4d} {user.name:20s}'.format(user=user)
 
         if keys and user.public_keys:
-            line += ' {}'.format(fmt_key(user.public_keys[0].pkey))
+            line += ' * {}'.format(
+                user.public_keys[0].as_pkey().readable_fingerprint
+            )
         click.echo(line)
 
-        if len(user.public_keys) > 1:
+        if len(user.public_keys) > 1 and keys:
             for key in user.public_keys[1:]:
-                click.echo('{0:25s} {}'.format('', fmt_key(key.pkey)))
+                click.echo('{0:25s} * {1}'.format(
+                    '', key.as_pkey().readable_fingerprint
+                ))
 
 
 @cli.group('key')
