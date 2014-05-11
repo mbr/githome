@@ -46,6 +46,53 @@ def cli(ctx, debug, githome):
     ctx.obj['githome'] = gh
 
 
+@cli.command()
+@click.argument('username')
+@click.pass_obj
+def shell(obj, username):
+    log = Logger('githome-shell')
+
+    gh = obj['githome']
+
+    # get user
+    user = gh.get_user_by_name(username)
+
+    if not user:
+        log.critical('Invalid user: {}'.format(username))
+        sys.exit(1)
+
+    # FIXME: implement shell here
+    click.echo('SHELL GOES HERE, {}'.format(username))
+
+
+@cli.command()
+@click.option('--cmd', default=None,
+              help='Path to executable for githome.')
+@click.pass_obj
+def authorized_keys(obj, cmd):
+    gh = obj['githome']
+
+    if not cmd:
+        cmd = pathlib.Path(sys.argv[0]).absolute()
+
+    for key in gh.session.query(PublicKey):
+        opts = [
+            # fixme: we'd need shlex.quote here, actually
+            'command="\'{}\' shell \'{}\'"'.format(
+                cmd,
+                key.user.name,
+            ),
+            'no-agent-forwarding',
+            'no-port-forwarding',
+            'no-pty',
+            'no-user-rc',
+            'no-x11-forwarding',
+        ]
+        comment = ','.join(opts)
+        pkey = key.as_pkey(comment=comment)
+        print pkey.to_pubkey_line()
+
+
 @cli.group('user')
 def user_group():
     pass
