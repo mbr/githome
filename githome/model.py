@@ -1,6 +1,5 @@
 from binascii import hexlify
 
-from paramiko.rsakey import RSAKey
 from sqlalchemy import Column, Integer, String, ForeignKey, LargeBinary
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base

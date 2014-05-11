@@ -1,17 +1,7 @@
 from binascii import hexlify
 
-from gevent import sleep
 from logbook import Logger
 from logbook.handlers import DEFAULT_FORMAT_STRING
-
-
-def heartbeat(delay=3):
-    log = Logger('heartbeat')
-    i = 0
-    while True:
-        log.debug(i)
-        i += 1
-        sleep(delay)
 
 
 class ClientLogger(Logger):

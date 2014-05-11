@@ -1,13 +1,11 @@
 import click
 import logbook
 from logbook import StderrHandler, NullHandler, Logger
-import paramiko
 import pathlib
 import sys
 
 from .home import GitHome
 from .model import User, PublicKey
-from .server import SSHServer
 from .util import readable_formatter, fmt_key
 
 
@@ -157,11 +155,6 @@ def init(path):
     # initialize
     GitHome.initialize(path)
     log.info('Initialized new githome in {}'.format(path))
-
-
-@cli.command()
-def server():
-    SSHServer(paramiko.RSAKey(filename='test_rsa.key')).run()
 
 
 def run_cli():
