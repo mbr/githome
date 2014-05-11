@@ -164,7 +164,17 @@ def remove_key(obj, fingerprints):
         if not key:
             log.warning('Key {} not found.'.format(fingerprint))
             continue
-    #
+
+
+@key_group.command('list')
+@click.pass_obj
+def list_keys(obj):
+    gh = obj['githome']
+
+    for key in gh.session.query(PublicKey).order_by(PublicKey.user_id):
+        click.echo('{} ({})'.format(
+            key.as_pkey().readable_fingerprint, key.user.name
+        ))
 
 
 @cli.command()
