@@ -1,8 +1,10 @@
-import click
 import logbook
-from logbook import StderrHandler, NullHandler, Logger
 import pathlib
 import sys
+
+import click
+from sshkeys import Key as SSHKey
+from logbook import StderrHandler, NullHandler, Logger
 
 from .home import GitHome
 from .model import User, PublicKey
@@ -44,12 +46,12 @@ def cli(ctx, debug, githome):
     ctx.obj['githome'] = gh
 
 
-@cli.group()
-def user():
+@cli.group('user')
+def user_group():
     pass
 
 
-@user.command('add')
+@user_group.command('add')
 @click.argument('name')
 @click.pass_obj
 def create_user(obj, name):
@@ -67,7 +69,7 @@ def create_user(obj, name):
     log.info('Created user {}'.format(user.name))
 
 
-@user.command('delete')
+@user_group.command('delete')
 @click.argument('name')
 @click.pass_obj
 def delete_user(obj, name):
@@ -82,7 +84,7 @@ def delete_user(obj, name):
         log.info('Removed user {}'.format(user.name))
 
 
-@user.command('list')
+@user_group.command('list')
 @click.option('-k', '--keys', is_flag=True, default=False)
 @click.pass_obj
 def list_users(obj, keys):
@@ -100,15 +102,15 @@ def list_users(obj, keys):
                 click.echo('{0:25s} {}'.format('', fmt_key(key.pkey)))
 
 
-@cli.group()
-def key():
+@cli.group('key')
+def key_group():
     pass
 
 
-@key.command('add')
+@key_group.command('add')
 @click.argument('username')
 @click.pass_obj
-def add_key(obj, username):
+def add_key(obj, username, keyfiles):
     log = Logger('add_key')
 
     gh = obj['githome']
