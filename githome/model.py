@@ -15,6 +15,8 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True, nullable=False)
+    public_keys = relationship(lambda: PublicKey, backref='user',
+                               cascade='all')
 
     def __init__(self, name, **kwargs):
         name = name.lower()
@@ -29,7 +31,6 @@ class PublicKey(Base):
 
     fingerprint = Column(String, primary_key=True)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
-    user = relationship(User, backref='public_keys')
     data = Column(LargeBinary, nullable=False)
 
     @classmethod
