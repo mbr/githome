@@ -109,6 +109,7 @@ def key_group():
 
 @key_group.command('add')
 @click.argument('username')
+@click.argument('keyfiles', type=click.File('rb'), nargs=-1)
 @click.pass_obj
 def add_key(obj, username, keyfiles):
     log = Logger('add_key')
