@@ -21,7 +21,8 @@ setup(
     url='http://github.com/mbr/githome',
     license='MIT',
     packages=find_packages(exclude=['tests']),
-    install_requires=['logbook', 'click', 'pathlib', 'sqlalchemy', 'sshkeys'],
+    install_requires=['logbook', 'click', 'pathlib', 'sqlalchemy',
+                      'sshkeys>=0.4'],
     entry_points={
         'console_scripts': [
             'githome = githome.cmd:run_cli',

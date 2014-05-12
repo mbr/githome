@@ -37,5 +37,5 @@ class PublicKey(Base):
     def from_pkey(cls, pkey):
         return cls(data=pkey.data, fingerprint=hexlify(pkey.fingerprint))
 
-    def as_pkey(self, comment=None):
-        return SSHKey(self.data, comment)
+    def as_pkey(self, comment=None, options=None):
+        return SSHKey(self.data, comment, options)

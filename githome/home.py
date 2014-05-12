@@ -1,4 +1,5 @@
 from binascii import hexlify
+from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -36,7 +37,7 @@ class GitHome(object):
         return 'sqlite:///{}'.format(self.db_path)
 
     def __init__(self, path):
-        self.path = path
+        self.path = Path(path)
         self.bind = create_engine(self.dsn)
         self.session = scoped_session(sessionmaker(bind=self.bind))
 

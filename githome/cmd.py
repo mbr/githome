@@ -76,20 +76,25 @@ def authorized_keys(obj, cmd):
         cmd = pathlib.Path(sys.argv[0]).absolute()
 
     for key in gh.session.query(PublicKey):
-        opts = [
-            # fixme: we'd need shlex.quote here, actually
-            'command="\'{}\' shell \'{}\'"'.format(
-                cmd,
-                key.user.name,
-            ),
-            'no-agent-forwarding',
-            'no-port-forwarding',
-            'no-pty',
-            'no-user-rc',
-            'no-x11-forwarding',
+        args = [
+            str(cmd),
+            '--githome',
+            str(gh.path.absolute()),
+            'shell',
+            key.user.name,
         ]
-        comment = ','.join(opts)
-        pkey = key.as_pkey(comment=comment)
+
+        full_cmd = ' '.join("'{}'".format(p) for p in args)
+
+        opts = {
+            'command': full_cmd,
+            'no-agent-forwarding': True,
+            'no-port-forwarding': True,
+            'no-pty': True,
+            'no-user-rc': True,
+            'no-x11-forwarding': True,
+        }
+        pkey = key.as_pkey(options=opts)
         print pkey.to_pubkey_line()
 
 
