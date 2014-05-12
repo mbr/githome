@@ -88,6 +88,8 @@ def shell(obj, username):
 
     CMD_WHITELIST = [
         'git-upload-pack',
+        'git-receive-pack',
+        'git-upload-archive',
     ]
 
     if not shell_cmd:
@@ -102,20 +104,29 @@ def shell(obj, username):
         log.critical('Missing repository parameter')
         abort(2)
 
-    if shell_cmd[0] == 'git-upload-pack':
-        safe_args = ['git-upload-pack', '--strict']  # enforce strict
-    else:
-        safe_args = [shell_cmd[0]]
-
     try:
         repo_path = gh.get_repo_path(shell_cmd[1], create=True)
     except ValueError as e:
         log.critical('Bad repository ({}): {}'.format(shell_cmd[1], e))
         abort(1)
+
+    if shell_cmd[0] == 'git-upload-pack':
+        safe_args = [shell_cmd[0], '--strict',   # enforce strict
+                     str(repo_path)]
+    elif shell_cmd[0] == 'git-receive-pack':
+        safe_args = [shell_cmd[0], str(repo_path)]
+    elif shell_cmd[0] == 'git-upload-archive':
+        safe_args = [shell_cmd[0], str(repo_path)]
+    else:
+        log.critical('Command {} is whitelisted, but not explicitly handled.'
+                     .format(shell_cmd[0]))
+        abort(1)
+
     log.debug('Repository path is {}'.format(repo_path))
 
-    safe_args.append(str(repo_path))  # append git repo path
-    os.execlp(*safe_args)
+    log.debug('Executing {!r}', safe_args)
+    binary = safe_args[0]  # we use path through execlP
+    os.execlp(binary, *safe_args)
 
 
 @cli.command()
