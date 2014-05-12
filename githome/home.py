@@ -1,12 +1,16 @@
 from binascii import hexlify
 from pathlib import Path
 import re
+import subprocess
 
 import logbook
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from .model import Base, User, PublicKey
+
+
+log = logbook.Logger('githome')
 
 
 class GitHome(object):
@@ -26,6 +30,10 @@ class GitHome(object):
     def _make_db_path(path):
         return path / 'githome.sqlite'
 
+    @staticmethod
+    def _make_template_path(path):
+        return path / 'template'
+
     @property
     def log_path(self):
         return self._make_log_path(self.path)
@@ -39,6 +47,10 @@ class GitHome(object):
         return self._make_db_path(self.path)
 
     @property
+    def template_path(self):
+        return self._make_template_path(self.path)
+
+    @property
     def dsn(self):
         return 'sqlite:///{}'.format(self.db_path)
 
@@ -47,7 +59,7 @@ class GitHome(object):
         self.bind = create_engine(self.dsn)
         self.session = scoped_session(sessionmaker(bind=self.bind))
 
-    def get_repo_path(self, unsafe_path):
+    def get_repo_path(self, unsafe_path, create=False):
         unsafe = Path(unsafe_path)
 
         # turn any absolute unsafe path into a relative one
@@ -80,9 +92,27 @@ class GitHome(object):
             raise ValueError('Path too short')
 
         # append a final .git
-        components[-1] += '.git'
+        user_path = Path(*components)  # used only for printing
 
-        return self.repo_path / Path(*components)
+        components[-1] += '.git'
+        safe_path = self.repo_path / Path(*components)
+
+        if not safe_path.exists() or not safe_path.is_dir():
+            if not create:
+                raise ValueError('Repository does not exist')
+            log.warning('Creating NEW repository \'{}\' in githome'.format(
+                user_path)
+            )
+
+            # create the repo
+            safe_path.mkdir(parents=True)
+            subprocess.check_call([
+                'git', 'init', '--quiet', '--bare',
+                '--shared=0600', str(safe_path),
+                '--template', str(self.template_path),
+            ])
+
+        return safe_path
 
     def get_log_handler(self, **kwargs):
         # ensure log path exists
@@ -108,6 +138,7 @@ class GitHome(object):
     def initialize(cls, path):
         cls._make_log_path(path).mkdir()
         cls._make_repo_path(path).mkdir()
+        cls._make_template_path(path).mkdir()
 
         gh = cls(path)
         Base.metadata.create_all(bind=gh.bind)

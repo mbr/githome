@@ -1,5 +1,7 @@
 import logbook
 import pathlib
+import os
+import shlex
 import sys
 
 import click
@@ -73,10 +75,42 @@ def shell(obj, username):
 
     if not user:
         log.critical('Invalid user: {}'.format(username))
-        sys.exit(1)
+        abort(1)
 
-    # FIXME: implement shell here
+    log.info('Shell auth from: {}.'.format(user.name))
+    log = Logger('githome-shell [{}]'.format(user.name))
+
+    # we've got our user, now authorize him or not
+    # FIXME: missing any sort of authorization system
+
+    shell_cmd = shlex.split(os.environ.get('SSH_ORIGINAL_COMMAND', ''))
+    log.debug('SSH_ORIGINAL_COMMAND {!r}'.format(shell_cmd))
+
+    CMD_WHITELIST = [
+        'git-upload-pack',
+    ]
+
+    if not shell_cmd:
+        log.critical('No shell command given')
+        abort(1)
+
+    if not shell_cmd[0] in CMD_WHITELIST:
+        log.critical('{} is not a whitelisted command.'.format(shell_cmd[0]))
+        abort(1)
+
+    if len(shell_cmd) < 2:
+        log.critical('Missing repository parameter')
+        abort(2)
+
+    try:
+        repo_path = gh.get_repo_path(shell_cmd[1], create=True)
+    except ValueError as e:
+        log.critical('Bad repository ({}): {}'.format(shell_cmd[1], e))
+        abort(1)
+    log.debug('Repository path is {}'.format(repo_path))
+
     click.echo('SHELL GOES HERE, {}'.format(username))
+    click.echo(repr(shell_cmd))
 
 
 @cli.command()
