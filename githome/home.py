@@ -1,4 +1,5 @@
 from binascii import hexlify
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -153,6 +154,17 @@ class GitHome(object):
 
         gh = cls(path)
         Base.metadata.create_all(bind=gh.bind)
+
+        # create initial configuration
+        cfgs = {
+            'update_authorized_keys': True,
+            'authorized_keys_file': os.path.abspath(os.path.expanduser(
+                '~/.ssh/authorized_keys'))
+        }
+
+        for k, v in cfgs.items():
+            gh.session.add(ConfigSetting(key=k, value=v))
+        gh.session.commit()
 
     def __repr__(self):
         return '{0.__class__.__name__}(path={0.path!r})'.format(self)
