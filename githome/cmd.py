@@ -92,11 +92,18 @@ def authorized_keys(obj, cmd):
     for key in gh.session.query(PublicKey):
         args = [
             str(cmd),
+        ]
+
+        if obj['debug']:
+            args.append('--debug')
+
+        args.extend([
             '--githome',
             str(gh.path.absolute()),
+            '--remote',
             'shell',
             key.user.name,
-        ]
+        ])
 
         full_cmd = ' '.join("'{}'".format(p) for p in args)
 
