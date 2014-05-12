@@ -10,7 +10,6 @@ from logbook import StderrHandler, NullHandler, Logger
 
 from .home import GitHome
 from .model import User, PublicKey
-from .util import readable_formatter
 
 
 def abort(status=1):
