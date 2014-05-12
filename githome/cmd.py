@@ -138,6 +138,7 @@ def authorized_keys(obj, cmd):
     if not cmd:
         cmd = pathlib.Path(sys.argv[0]).absolute()
 
+    pkeys = []
     for key in gh.session.query(PublicKey):
         args = [
             str(cmd),
@@ -165,6 +166,10 @@ def authorized_keys(obj, cmd):
             'no-x11-forwarding': True,
         }
         pkey = key.as_pkey(options=opts)
+
+        pkeys.append(pkey)
+
+    for pkey in pkeys:
         print pkey.to_pubkey_line()
 
 
