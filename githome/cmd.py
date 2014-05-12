@@ -15,21 +15,28 @@ from .util import readable_formatter
 @click.option('-d', '--debug/--no-debug', default=False,
               help='Output debugging-level info in logs')
 @click.option('--githome', default='.', metavar='PATH', type=pathlib.Path)
+@click.option('--remote', default=False, is_flag=True)
 @click.pass_context
-def cli(ctx, debug, githome):
+def cli(ctx, debug, githome, remote):
     log = Logger('cli')
 
     # setup console logging
     NullHandler().push_application()
     loglevel = logbook.DEBUG if debug else logbook.INFO
 
-    handler = StderrHandler(level=loglevel)
-    handler.formatter = readable_formatter
+    if not remote:
+        handler = StderrHandler(level=loglevel)
+        if debug:
+            import logging
+            logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+    else:
+        # when connection via SSH, only output errors
+        handler = StderrHandler(level=logbook.WARNING,
+                                format_string='{record.message}')
+
     handler.push_application()
 
-    if debug:
-        import logging
-        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+    ctx.obj['debug'] = debug
 
     # if we're just calling init, pass to init
     if ctx.invoked_subcommand == 'init':
