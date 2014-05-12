@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 
 import logbook
 from sqlalchemy import create_engine
@@ -142,6 +143,41 @@ class GitHome(object):
     def get_key_by_fingerprint(self, fingerprint):
         return self.session.query(PublicKey).get(hexlify(fingerprint))
 
+    def get_authorized_keys_block(self, debug=False):
+        pkeys = []
+        for key in self.session.query(PublicKey):
+            args = [
+                self.get_config('githome_executable'),
+            ]
+
+            if debug:
+                args.append('--debug')
+
+            args.extend([
+                '--githome',
+                str(self.path.absolute()),
+                '--remote',
+                'shell',
+                key.user.name,
+            ])
+
+            full_cmd = ' '.join("'{}'".format(p) for p in args)
+
+            opts = {
+                'command': full_cmd,
+                'no-agent-forwarding': True,
+                'no-port-forwarding': True,
+                'no-pty': True,
+                'no-user-rc': True,
+                'no-x11-forwarding': True,
+            }
+            pkey = key.as_pkey(options=opts)
+
+            pkeys.append(pkey)
+
+    def update_authorized_keys(self):
+        pass
+
     @classmethod
     def check(cls, path):
         return cls._make_db_path(path).exists()
@@ -159,12 +195,15 @@ class GitHome(object):
         cfgs = {
             'update_authorized_keys': True,
             'authorized_keys_file': os.path.abspath(os.path.expanduser(
-                '~/.ssh/authorized_keys'))
+                '~/.ssh/authorized_keys')),
+            'githome_executable': str(Path(sys.argv[0]).absolute()),
         }
 
         for k, v in cfgs.items():
             gh.session.add(ConfigSetting(key=k, value=v))
         gh.session.commit()
+
+        return gh
 
     def __repr__(self):
         return '{0.__class__.__name__}(path={0.path!r})'.format(self)

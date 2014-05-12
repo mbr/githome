@@ -135,8 +135,7 @@ def shell(obj, username):
 def authorized_keys(obj, cmd):
     gh = obj['githome']
 
-    if not cmd:
-        cmd = pathlib.Path(sys.argv[0]).absolute()
+    echo(gh.get_authorized_keys_block(obj['debug']))
 
     pkeys = []
     for key in gh.session.query(PublicKey):
@@ -210,6 +209,8 @@ def delete_user(obj, name):
         gh.session.commit()
         log.info('Removed user {}'.format(user.name))
 
+        gh.update_authorized_keys()
+
 
 @user_group.command('list')
 @click.option('-k', '--keys', is_flag=True, default=False)
@@ -276,6 +277,8 @@ def add_key(obj, username, keyfiles):
 
     gh.session.commit()
 
+    gh.update_authorized_keys()
+
 
 @key_group.command('remove')
 @click.argument('fingerprints', nargs=-1)
@@ -291,6 +294,9 @@ def remove_key(obj, fingerprints):
         if not key:
             log.warning('Key {} not found.'.format(fingerprint))
             continue
+
+    if fingerprints:
+        gh.update_authorized_keys()
 
 
 @key_group.command('list')
@@ -349,8 +355,14 @@ def init(path):
         log.info('Created {}'.format(path))
 
     # initialize
-    GitHome.initialize(path)
-    log.info('Initialized new githome in {}'.format(path))
+    gh = GitHome.initialize(path)
+    log.info('Initialized new githome in {}.'.format(path))
+    log.info('{} will be updated on key additions.'.format(
+        gh.get_config('authorized_keys_file'),
+    ))
+    log.info('Using githome at {}.'.format(
+        gh.get_config('githome_executable'),
+    ))
 
 
 def run_cli():
