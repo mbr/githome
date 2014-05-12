@@ -102,6 +102,11 @@ def shell(obj, username):
         log.critical('Missing repository parameter')
         abort(2)
 
+    if shell_cmd[0] == 'git-upload-pack':
+        safe_args = ['git-upload-pack', '--strict']  # enforce strict
+    else:
+        safe_args = [shell_cmd[0]]
+
     try:
         repo_path = gh.get_repo_path(shell_cmd[1], create=True)
     except ValueError as e:
@@ -109,8 +114,8 @@ def shell(obj, username):
         abort(1)
     log.debug('Repository path is {}'.format(repo_path))
 
-    click.echo('SHELL GOES HERE, {}'.format(username))
-    click.echo(repr(shell_cmd))
+    safe_args.append(str(repo_path))  # append git repo path
+    os.execlp(*safe_args)
 
 
 @cli.command()
