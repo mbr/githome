@@ -9,7 +9,7 @@ from sshkeys import Key as SSHKey
 from logbook import StderrHandler, NullHandler, Logger
 
 from .home import GitHome
-from .model import User, PublicKey
+from .model import User, PublicKey, ConfigSetting
 
 
 def abort(status=1):
@@ -302,6 +302,38 @@ def list_keys(obj):
         click.echo('{} ({})'.format(
             key.as_pkey().readable_fingerprint, key.user.name
         ))
+
+
+@cli.group('config')
+def config_group():
+    pass
+
+
+@config_group.command('set')
+@click.argument('key')
+@click.argument('value')
+@click.pass_obj
+def set_config(obj, key, value):
+    log = Logger('set_config')
+    gh = obj['githome']
+
+    try:
+        gh.set_config(key, value)
+    except KeyError:
+        log.critical('No such configuration value: {}'.format(key))
+        abort(1)
+    gh.session.commit()
+
+    log.info('Configuration set: {}={}'.format(key, value))
+
+
+@config_group.command('list')
+@click.pass_obj
+def list_config(obj):
+    gh = obj['githome']
+
+    for cs in gh.session.query(ConfigSetting):
+        click.echo('{cs.key:25s} {cs.value}'.format(cs=cs))
 
 
 @cli.command()

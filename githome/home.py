@@ -7,7 +7,7 @@ import logbook
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from .model import Base, User, PublicKey
+from .model import Base, User, PublicKey, ConfigSetting
 
 
 log = logbook.Logger('githome')
@@ -58,6 +58,17 @@ class GitHome(object):
         self.path = Path(path)
         self.bind = create_engine(self.dsn)
         self.session = scoped_session(sessionmaker(bind=self.bind))
+
+    def get_config(self, key):
+        cs = self.session.query(ConfigSetting).get(key)
+        return None if cs is None else cs.value
+
+    def set_config(self, key, value):
+        cs = self.session.query(ConfigSetting).get(key)
+        if cs is None:
+            raise KeyError(key)
+        cs.value = value
+        self.session.add(cs)
 
     def get_repo_path(self, unsafe_path, create=False):
         unsafe = Path(unsafe_path)

@@ -1,4 +1,5 @@
 from binascii import hexlify
+import json
 
 from sqlalchemy import Column, Integer, String, ForeignKey, LargeBinary
 from sqlalchemy.orm import sessionmaker, relationship
@@ -39,3 +40,22 @@ class PublicKey(Base):
 
     def as_pkey(self, comment=None, options=None):
         return SSHKey(self.data, comment, options)
+
+
+class ConfigSetting(Base):
+    __tablename__ = 'configsetting'
+
+    def __init__(self, key, value):
+        self.key = key
+        self.value = value
+
+    @property
+    def value(self):
+        return json.loads(self.json_value)
+
+    @value.setter
+    def value(self, v):
+        self.json_value = json.dumps(v)
+
+    key = Column(String, primary_key=True)
+    json_value = Column(String, nullable=True)
