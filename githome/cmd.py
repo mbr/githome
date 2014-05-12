@@ -11,6 +11,10 @@ from .model import User, PublicKey
 from .util import readable_formatter
 
 
+def abort(status=1):
+    sys.exit(status)
+
+
 @click.group()
 @click.option('-d', '--debug/--no-debug', default=False,
               help='Output debugging-level info in logs')
@@ -46,7 +50,7 @@ def cli(ctx, debug, githome, remote):
     if not GitHome.check(githome):
         log.critical('Not a valid githome: "{}"; use {} init to initialize it'
                      'first.'.format(githome, 'githome'))
-        sys.exit(1)
+        abort(1)
 
     # create and add to context
     gh = GitHome(githome)
@@ -119,7 +123,7 @@ def create_user(obj, name):
     gh = obj['githome']
     if gh.get_user_by_name(name):
         log.critical('User {} already exists'.format(name))
-        sys.exit(1)
+        abort(1)
 
     user = User(name=name)
     gh.session.add(user)
@@ -183,7 +187,7 @@ def add_key(obj, username, keyfiles):
 
     if not user:
         log.critical('No such user: {}'.format(username))
-        sys.exit(1)
+        abort(1)
 
     for keyfile in keyfiles:
         for line in keyfile:
@@ -243,7 +247,7 @@ def init(path):
     if path.exists():
         if [p for p in path.iterdir()]:
             log.critical('Directory {} exists and is not empty'.format(path))
-            sys.exit(1)
+            abort(1)
     else:
         path.mkdir(parents=True)
         log.info('Created {}'.format(path))
