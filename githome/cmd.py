@@ -56,6 +56,9 @@ def cli(ctx, debug, githome, remote):
     gh = GitHome(githome)
     ctx.obj['githome'] = gh
 
+    # setup logging to files
+    gh.get_log_handler(level=loglevel, bubble=True).push_application()
+
 
 @cli.command()
 @click.argument('username')
