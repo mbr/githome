@@ -1,22 +1,15 @@
-.. githome documentation master file, created by
-   sphinx-quickstart on Tue May 13 21:07:32 2014.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. include:: ../README.rst
 
-Welcome to githome's documentation!
-===================================
+.. warning:: githome is currently under heavy development. The code is fine,
+             though it is simply missing essential features at the moment;
+             notable these include setting permissions for individual users.
+             It is already up on PyPI, however, to allow me to test automated
+             deployments from this source. Any help testing is very welcome.
 
-Contents:
+
 
 .. toctree::
    :maxdepth: 2
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
+   installation
+   design
