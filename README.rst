@@ -1,3 +1,5 @@
+Currently under development (and missing core features). Testing very welcome.
+
 githome
 =======
 
