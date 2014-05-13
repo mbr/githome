@@ -12,7 +12,7 @@ def read(fname):
 
 setup(
     name='githome',
-    version='0.2dev',
+    version='0.3.dev1',
     description='A tiny server for your git repositories, allowing '
                 'configurable levels of access for multiple users.',
     long_description=read('README.rst'),
