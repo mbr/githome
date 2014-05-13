@@ -4,6 +4,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import uuid
 
 import logbook
 from sqlalchemy import create_engine
@@ -13,6 +14,20 @@ from .model import Base, User, PublicKey, ConfigSetting
 
 
 log = logbook.Logger('githome')
+
+
+def _update_block(buf, content, start_marker, end_marker):
+    BLOCK_RE = re.compile('{}.*?{}'.format(re.escape(start_marker),
+                                           re.escape(end_marker)),
+                          re.DOTALL)
+
+    block = '\n'.join([start_marker, content, end_marker])
+
+    if BLOCK_RE.search(buf):
+        # block is already present
+        return BLOCK_RE.sub(buf, block)
+
+    return buf + '\n\n' + block
 
 
 class GitHome(object):
@@ -175,8 +190,33 @@ class GitHome(object):
 
             pkeys.append(pkey)
 
-    def update_authorized_keys(self):
-        pass
+        return '\n'.join(pkey.to_pubkey_line() for pkey in pkeys)
+
+    def update_authorized_keys(self, force=False):
+        if not self.get_config('update_authorized_keys') and not force:
+            log.debug('Not updating authorized_keys, disabled in config')
+            return
+
+        ak = Path(self.get_config('authorized_keys_file'))
+        if not ak.exists():
+            raise RuntimeError('authorized_keys_file does not exist: {}'.
+                               format(ak))
+
+        id = self.get_config('githome_id')
+        start_marker = ('### SECTION ADDED BY GITHOME, DO NOT EDIT\n'
+                        '### githome location: {}\n'
+                        '### id: {}').format(self.path.absolute(), id)
+        end_marker = '### END ADDED BY GITHOME ({})'.format(id)
+
+        old = ak.open().read()
+
+        ak.open('wb').write(_update_block(
+            old,
+            self.get_authorized_keys_block(),
+            start_marker,
+            end_marker,
+        ))
+        log.info('Updated {}'.format(ak))
 
     @classmethod
     def check(cls, path):
@@ -197,6 +237,7 @@ class GitHome(object):
             'authorized_keys_file': os.path.abspath(os.path.expanduser(
                 '~/.ssh/authorized_keys')),
             'githome_executable': str(Path(sys.argv[0]).absolute()),
+            'githome_id': str(uuid.uuid4()),
         }
 
         for k, v in cfgs.items():
