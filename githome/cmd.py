@@ -135,41 +135,7 @@ def shell(obj, username):
 def authorized_keys(obj, cmd):
     gh = obj['githome']
 
-    echo(gh.get_authorized_keys_block(obj['debug']))
-
-    pkeys = []
-    for key in gh.session.query(PublicKey):
-        args = [
-            str(cmd),
-        ]
-
-        if obj['debug']:
-            args.append('--debug')
-
-        args.extend([
-            '--githome',
-            str(gh.path.absolute()),
-            '--remote',
-            'shell',
-            key.user.name,
-        ])
-
-        full_cmd = ' '.join("'{}'".format(p) for p in args)
-
-        opts = {
-            'command': full_cmd,
-            'no-agent-forwarding': True,
-            'no-port-forwarding': True,
-            'no-pty': True,
-            'no-user-rc': True,
-            'no-x11-forwarding': True,
-        }
-        pkey = key.as_pkey(options=opts)
-
-        pkeys.append(pkey)
-
-    for pkey in pkeys:
-        print pkey.to_pubkey_line()
+    click.echo(gh.get_authorized_keys_block(obj['debug']))
 
 
 @cli.group('user')
