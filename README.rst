@@ -1,6 +1,13 @@
 githome
 =======
 
+.. warning:: githome is currently under heavy development. The code is fine,
+             though it is simply missing essential features at the moment;
+             notable these include setting permissions for individual users.
+             It is already up on PyPI, however, to allow me to test automated
+             deployments from this source. Any help testing is very welcome.
+
+
 githome is an authorization system for hosting git_ repositories. It allows to
 create rules for different users, such as a read-only or developer access and
 makes it easy to create new repositories by simply pushing, without having to
