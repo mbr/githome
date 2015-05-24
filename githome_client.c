@@ -47,7 +47,8 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  for (int i = 2; i < argc; ++i) {
+  int i;
+  for (i = 2; i < argc; ++i) {
     if (send_all(sock, argv[i], strlen(argv[i]))) {
       perror("failed to send");
       return 1;
