@@ -1,3 +1,4 @@
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -28,7 +29,7 @@ int main(int argc, char **argv) {
   struct sockaddr_un srv;
 
   if (argc < 2) {
-    fprintf(stderr, "usage: githome_client SOCKET [ARGS]...\n");
+    fprintf(stderr, "usage: %s SOCKET [ARGS]...\n", basename(argv[0]));
     exit(1);
   }
 
