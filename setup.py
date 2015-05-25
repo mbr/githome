@@ -4,10 +4,24 @@
 import os
 
 from setuptools import setup, find_packages
+from setuptools.command.install import install
+
+from distutils.sysconfig import customize_compiler
+from distutils.ccompiler import new_compiler
 
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+
+class InstallWithTools(install):
+    def run(self):
+        cc = new_compiler()
+        customize_compiler(cc)
+        o_files = cc.compile(['githome/gh_client.c'])
+        cc.link_executable(o_files, 'githome/gh_client')
+
+        install.run(self)  # run normal build command
 
 
 setup(
@@ -21,11 +35,17 @@ setup(
     url='http://github.com/mbr/githome',
     license='MIT',
     packages=find_packages(exclude=['tests']),
+    package_data={
+        'githome': ['gh_client'],
+    },
     install_requires=['logbook', 'click', 'pathlib', 'sqlalchemy',
                       'sshkeys>=0.4'],
     entry_points={
         'console_scripts': [
             'githome = githome.cmd:run_cli',
         ],
+    },
+    cmdclass={
+        'install': InstallWithTools,
     }
 )
