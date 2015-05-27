@@ -72,11 +72,61 @@ void* fmalloc(size_t size) {
 }
 
 
-int main(int argc, char **argv) {
-  int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+void exit_error(char *msg) {
+  fprintf(stderr, "%s\n", msg);
+  exit(EXIT_FAILURE);
+}
+
+
+void check_status(int fd) {
+  char buffer[1024];
+  ssize_t r;
+
+  r = readline(fd, buffer, sizeof(buffer));
+
+  if (r == 0)
+    exit_error("remote end closed connection unexpectedly\n");
+
+  if (r < 0)
+    exit_error("read status");
+
+  if (r < 2)
+    exit_error("response too short");
+
+  if (! strncmp("E ", buffer, 2))
+    exit_error(buffer+2);
+
+  if (strncmp("OK", buffer, 2))
+    exit_error("unexpected reply");
+
+  // we got an OK!
+}
+
+
+int connect_socket(char *path) {
+  int sock;
   struct sockaddr_un srv;
 
-  int c, dry_run = 0;
+  sock = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (sock < 0) {
+    perror("failed to open socket");
+    return -1;
+  }
+
+  srv.sun_family = AF_UNIX;
+  strncpy(srv.sun_path, path, sizeof(srv.sun_path) - 1);
+
+  if (connect(sock, (struct sockaddr*) &srv, sizeof(srv)) < 0) {
+    close(sock);
+    return -1;
+  }
+
+  return sock;
+}
+
+
+int main(int argc, char **argv) {
+  int sock, c, dry_run = 0;
 
   /* parse options */
   while((c = getopt(argc, argv,  "n")) != -1) {
@@ -92,17 +142,9 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
+  sock = connect_socket(argv[optind]);
   if (sock < 0) {
-    perror("failed to open socket");
-    return EXIT_FAILURE;
-  }
-
-  srv.sun_family = AF_UNIX;
-  strncpy(srv.sun_path, argv[optind], sizeof(srv.sun_path) - 1);
-
-  if (connect(sock, (struct sockaddr*) &srv, sizeof(srv)) < 0) {
-    close(sock);
-    perror("failed to connect to server");
+    perror("connect_socket");
     return EXIT_FAILURE;
   }
 
@@ -118,6 +160,9 @@ int main(int argc, char **argv) {
       return EXIT_FAILURE;
     }
   }
+
+  /* read status */
+  check_status(sock);
 
   /* read returned arguments */
   /* extra space for zero-termination of argument list */
@@ -148,10 +193,8 @@ int main(int argc, char **argv) {
     print_args(nargc, nargv);
   } else {
     /* ensure there are enough arguments to execute */
-    if (nargc < 1) {
-      fprintf(stderr, "Validation failed; too few arguments returned\n");
-      return EXIT_FAILURE;
-    }
+    if (nargc < 1)
+      exit_error("validation failed; too few arguments returned");
 
     /* finally, execute program */
     if (! execvp(nargv[0], nargv)) {
