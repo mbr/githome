@@ -35,7 +35,7 @@ def sanitize_path(path, subchar='-', invalid_chars=r'[^a-zA-Z0-9-_.]',
 
     # turn absolute path into a relative one by stripping the leading '/'
     if unsafe.is_absolute():
-        unsafe = unsafe.relative_to('/')
+        unsafe = unsafe.relative_to(unsafe.anchor)
 
     # every component must be alphanumeric
     components = []
