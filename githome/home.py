@@ -22,41 +22,14 @@ class GitHome(object):
     INVALID_CHARS_RE = re.compile(r'[^a-zA-Z0-9-_.]')
     SUBSTITUTION_CHAR = '-'
 
-    @staticmethod
-    def _make_log_path(path):
-        return path / 'log'
-
-    @staticmethod
-    def _make_repo_path(path):
-        return path / 'repos'
-
-    @staticmethod
-    def _make_db_path(path):
-        return path / 'githome.sqlite'
-
-    @staticmethod
-    def _make_template_path(path):
-        return path / 'template'
-
-    @property
-    def log_path(self):
-        return self._make_log_path(self.path)
-
-    @property
-    def repo_path(self):
-        return self._make_repo_path(self.path)
-
-    @property
-    def db_path(self):
-        return self._make_db_path(self.path)
-
-    @property
-    def template_path(self):
-        return self._make_template_path(self.path)
+    LOG_PATH = 'log'
+    REPOS_PATH = 'repos'
+    DB_PATH = 'githome.sqlite'
+    TEMPLATE_PATH = 'template'
 
     @property
     def dsn(self):
-        return 'sqlite:///{}'.format(self.db_path)
+        return 'sqlite:///{}'.format(self.path / self.DB_PATH)
 
     def __init__(self, path):
         self.path = Path(path)
@@ -110,7 +83,7 @@ class GitHome(object):
         user_path = Path(*components)  # used only for printing
 
         components[-1] += '.git'
-        safe_path = self.repo_path / Path(*components)
+        safe_path = self.path / self.REPOS_PATH / Path(*components)
 
         if not safe_path.exists() or not safe_path.is_dir():
             if not create:
@@ -130,12 +103,13 @@ class GitHome(object):
         return safe_path
 
     def get_log_handler(self, **kwargs):
+        log_path = self.path / self.LOG_PATH
         # ensure log path exists
-        if not self.log_path.exists():
-            self.log_path.mkdir()
+        if not log_path.exists():
+            log_path.mkdir()
 
         return logbook.RotatingFileHandler(
-            str(self.log_path / 'githome.log'),
+            str(log_path / 'githome.log'),
             **kwargs
         )
 
@@ -211,9 +185,9 @@ class GitHome(object):
 
     @classmethod
     def initialize(cls, path):
-        cls._make_log_path(path).mkdir()
-        cls._make_repo_path(path).mkdir()
-        cls._make_template_path(path).mkdir()
+        (path / cls.LOG_PATH).mkdir()
+        (path / cls.REPOS_PATH).mkdir()
+        (path / cls.TEMPLATE_PATH).mkdir()
 
         gh = cls(path)
         Base.metadata.create_all(bind=gh.bind)
