@@ -1,7 +1,6 @@
 from binascii import hexlify
 import os
 from pathlib import Path
-import re
 import subprocess
 import sys
 import uuid
@@ -11,17 +10,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from .model import Base, User, PublicKey, ConfigSetting
-from .util import _update_block
+from .util import _update_block, sanitize_path
 
 
 log = logbook.Logger('githome')
 
 
 class GitHome(object):
-    RESERVED_PATH_COMPONENTS = ('.', '..', '.git')
-    INVALID_CHARS_RE = re.compile(r'[^a-zA-Z0-9-_.]')
-    SUBSTITUTION_CHAR = '-'
-
     LOG_PATH = 'log'
     REPOS_PATH = 'repos'
     DB_PATH = 'githome.sqlite'
@@ -48,48 +43,14 @@ class GitHome(object):
         self.session.add(cs)
 
     def get_repo_path(self, unsafe_path, create=False):
-        unsafe = Path(unsafe_path)
-
-        # turn any absolute unsafe path into a relative one
-        if unsafe.is_absolute():
-            unsafe_comps = unsafe.parts[1:]
-        else:
-            unsafe_comps = unsafe.parts
-
-        # every component must be alphanumeric
-        components = []
-        for p in unsafe_comps:
-            # disallow .git
-            if p.endswith('.git'):
-                raise ValueError('Cannot end path in .git')
-
-            # remove invalid characters
-            clean = self.INVALID_CHARS_RE.sub(self.SUBSTITUTION_CHAR, p)
-
-            # if the name is empty, reject it
-            if not p:
-                raise ValueError('Path component too short.')
-
-            # if the name is potentially dangerous, reject it
-            if p in self.RESERVED_PATH_COMPONENTS:
-                raise ValueError('{} is a reserved path component.'.format(p))
-
-            components.append(clean)
-
-        if not components:
-            raise ValueError('Path too short')
-
-        # append a final .git
-        user_path = Path(*components)  # used only for printing
-
-        components[-1] += '.git'
-        safe_path = self.path / self.REPOS_PATH / Path(*components)
+        rel_path = sanitize_path(unsafe_path)
+        safe_path = self.path / self.REPOS_PATH / sanitize_path(unsafe_path)
 
         if not safe_path.exists() or not safe_path.is_dir():
             if not create:
                 raise ValueError('Repository does not exist')
             log.warning('Creating NEW repository \'{}\' in githome'.format(
-                user_path)
+                rel_path)
             )
 
             # create the repo
