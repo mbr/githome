@@ -1,24 +1,39 @@
+import os
+
+import logbook
 import trollius as asyncio
 from trollius import From
 
 
+log = logbook.Logger('githome-server')
+
+
 @asyncio.coroutine
-def gh_server():
-    yield From(asyncio.start_unix_server(gh_proto, 'ux.sock'))
+def gh_server(socket='ux.sock'):
+    if os.path.exists(socket):
+        os.unlink(socket)
+
+    yield From(asyncio.start_unix_server(gh_proto, socket))
 
 
 @asyncio.coroutine
 def gh_proto(client_reader, client_writer):
-    print 'connected'
+    log = logbook.Logger('client-{}'.format('some-id'))
+    log.debug('connected')
 
     while True:
-        line = yield From(client_reader.readline())
+        line = (yield From(client_reader.readline())).strip()
 
         if not line:
             break
 
-        print 'line', line[:-1]
-        #yield From(client_writer.write('received line: ' + line))
+        log.debug('arg: {}'.format(line))
+        yield From(client_writer.write('received line: ' + line))
+        break
+
+    # FIXME: isn't there a better interface for this?
+    log.debug('closing connection')
+    client_writer._transport.close()
 
 
 if __name__ == '__main__':
