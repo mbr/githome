@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
   } else {
     /* ensure there are enough arguments to execute */
     if (nargc < 1) {
-      fprintf(stderr, "Too few arguments returned\n");
+      fprintf(stderr, "Validation failed; too few arguments returned\n");
       return EXIT_FAILURE;
     }
 
