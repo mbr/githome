@@ -27,8 +27,12 @@ def gh_proto(client_reader, client_writer):
         if not line:
             break
 
-        log.debug('arg: {}'.format(line))
-        yield From(client_writer.write('received line: ' + line))
+        log.info('{}'.format(line))
+        yield From(client_writer.write('ls\n'))
+        yield From(client_writer.write('foo bar\n'))
+        yield From(client_writer.write('foo\n'))
+        yield From(client_writer.write('bar\n'))
+        yield From(client_writer.write('.'))
         break
 
     # FIXME: isn't there a better interface for this?
