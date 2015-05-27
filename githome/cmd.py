@@ -12,6 +12,9 @@ from .home import GitHome
 from .model import User, PublicKey, ConfigSetting
 
 
+log = Logger('cli')
+
+
 def abort(status=1):
     sys.exit(status)
 
@@ -23,8 +26,6 @@ def abort(status=1):
 @click.option('--remote', default=False, is_flag=True)
 @click.pass_context
 def cli(ctx, debug, githome, remote):
-    log = Logger('cli')
-
     # setup console logging
     NullHandler().push_application()
     loglevel = logbook.DEBUG if debug else logbook.INFO
@@ -147,8 +148,6 @@ def user_group():
 @click.argument('name')
 @click.pass_obj
 def create_user(obj, name):
-    log = Logger('create_user')
-
     gh = obj['githome']
     if gh.get_user_by_name(name):
         log.critical('User {} already exists'.format(name))
@@ -165,8 +164,6 @@ def create_user(obj, name):
 @click.argument('name')
 @click.pass_obj
 def delete_user(obj, name):
-    log = Logger('delete_user')
-
     gh = obj['githome']
 
     user = gh.get_user_by_name(name)
@@ -210,8 +207,6 @@ def key_group():
 @click.argument('keyfiles', type=click.File('rb'), nargs=-1)
 @click.pass_obj
 def add_key(obj, username, keyfiles):
-    log = Logger('add_key')
-
     gh = obj['githome']
 
     user = gh.get_user_by_name(username)
@@ -250,8 +245,6 @@ def add_key(obj, username, keyfiles):
 @click.argument('fingerprints', nargs=-1)
 @click.pass_obj
 def remove_key(obj, fingerprints):
-    log = Logger('remove_key')
-
     gh = obj['githome']
 
     for fingerprint in fingerprints:
@@ -286,7 +279,6 @@ def config_group():
 @click.argument('value')
 @click.pass_obj
 def set_config(obj, key, value):
-    log = Logger('set_config')
     gh = obj['githome']
 
     try:
@@ -311,7 +303,6 @@ def list_config(obj):
 @cli.command()
 @click.argument('path', type=pathlib.Path)
 def init(path):
-    log = Logger('init')
     if path.exists():
         if [p for p in path.iterdir()]:
             log.critical('Directory {} exists and is not empty'.format(path))
