@@ -25,8 +25,7 @@ int send_all(int socket, void *buf, size_t len) {
 }
 
 
-int readline(int fd, void *buffer, size_t n) {
-  char *buf = (char*) buffer;
+int readline(int fd, char *buf, size_t n) {
   ssize_t r, total = 0;
 
   do {
