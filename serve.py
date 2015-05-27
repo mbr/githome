@@ -1,6 +1,7 @@
 import os
 
 import logbook
+from sshkeys import Key as SSHKey
 import trollius as asyncio
 from trollius import From
 
@@ -22,12 +23,30 @@ def gh_proto(client_reader, client_writer):
     log.debug('connected')
 
     while True:
-        line = (yield From(client_reader.readline())).strip()
+        keytype = (yield From(client_reader.readline())).strip()
+        key = (yield From(client_reader.readline())).strip()
 
-        if not line:
+        if not keytype or not key:
+            log.warning('incomplete call')
             break
 
-        log.info('{}'.format(line))
+        # check if key is valid
+        try:
+            pkey = SSHKey.from_pubkey_line('{} {}'.format(keytype, key))
+        except Exception:
+            log.warning('invalid key')
+            yield From(client_writer.write('E invalid public key\n'))
+            break
+
+        log.info('{}, {}'.format(pkey.type, pkey.readable_fingerprint))
+
+        if False:
+            # check if key is authorized
+            yield From(client_writer.write('E access denied\n'))
+            break
+
+        yield From(client_writer.write('OK\n'))
+        # write OK byte
         yield From(client_writer.write('ls\n'))
         yield From(client_writer.write('foo bar\n'))
         yield From(client_writer.write('foo\n'))
