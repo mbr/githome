@@ -33,7 +33,6 @@ int readline(int fd, void *buffer, size_t n) {
 
   do {
     r = read(fd, buf, 1);
-    printf("read 1 byte\n");
 
     if (r == -1) {
         if (errno == EINTR) continue;  /* retry */
