@@ -26,10 +26,8 @@ int send_all(int socket, void *buf, size_t len) {
 
 
 int readline(int fd, void *buffer, size_t n) {
-  char *buf = (char*) buf;
-  ssize_t r;
-
-  --n;  /* space for terminating \0 */
+  char *buf = (char*) buffer;
+  ssize_t r, total = 0;
 
   do {
     r = read(fd, buf, 1);
@@ -42,13 +40,13 @@ int readline(int fd, void *buffer, size_t n) {
     if (r == 1) {
       if (*buf == '\n') break;
       ++buf;
-      --n;
+      total += r;
     }
-  } while(r && n);
+  } while(r && total + 1 < n);
 
   *buf = '\0';
 
-  return 0;
+  return total;
 }
 
 
