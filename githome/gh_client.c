@@ -9,6 +9,10 @@
 #include <sys/un.h>
 
 
+#define MAX_ARGS 32
+#define ARG_LEN 1024
+
+
 int send_all(int socket, void *buf, size_t len) {
   char *ptr = (char*) buf;
   while(len > 0) {
@@ -49,6 +53,25 @@ int readline(int fd, char *buf, size_t n) {
 }
 
 
+void print_args(int argc, char **argv) {
+  int i;
+
+  for(i = 0; i < argc; ++i)
+    printf("%s\n", argv[i]);
+}
+
+
+void* fmalloc(size_t size) {
+  void* p = malloc(size);
+  if (! p) {
+    perror("malloc");
+    exit(EXIT_FAILURE);
+  }
+
+  return p;
+}
+
+
 int main(int argc, char **argv) {
   int sock = socket(AF_UNIX, SOCK_STREAM, 0);
   struct sockaddr_un srv;
@@ -71,7 +94,7 @@ int main(int argc, char **argv) {
 
   if (sock < 0) {
     perror("failed to open socket");
-    return 1;
+    return EXIT_FAILURE;
   }
 
   srv.sun_family = AF_UNIX;
@@ -80,23 +103,62 @@ int main(int argc, char **argv) {
   if (connect(sock, (struct sockaddr*) &srv, sizeof(srv)) < 0) {
     close(sock);
     perror("failed to connect to server");
-    return 1;
+    return EXIT_FAILURE;
   }
 
   int i;
   for (i = optind+1; i < argc; ++i) {
     if (send_all(sock, argv[i], strlen(argv[i]))) {
       perror("failed to send");
-      return 1;
+      return EXIT_FAILURE;
     }
 
     if (write(sock, "\n", 1) != 1) {
       perror("failed to send");
-      return 1;
+      return EXIT_FAILURE;
     }
   }
 
+  /* read returned arguments */
+  /* extra space for zero-termination of argument list */
+  char **nargv = fmalloc(sizeof(char*) * (MAX_ARGS + 1));
+
+  ssize_t r;
+  int nargc = 0;
+
+  for(;;) {
+    char *buffer = fmalloc(sizeof(char) * ARG_LEN);
+
+    r = readline(sock, buffer, ARG_LEN);
+
+    if (r == 0) break;
+
+    if (r < 0) {
+      perror("failed to read");
+      return EXIT_FAILURE;
+    };
+
+    nargv[nargc] = buffer;
+    ++nargc;
+  };
+  nargv[nargc] = (char*) 0;
   close(sock);
+
+  if (dry_run) {
+    print_args(nargc, nargv);
+  } else {
+    /* ensure there are enough arguments to execute */
+    if (nargc < 1) {
+      fprintf(stderr, "Too few arguments returned\n");
+      return EXIT_FAILURE;
+    }
+
+    /* finally, execute program */
+    if (! execvp(nargv[0], nargv)) {
+       perror("execvp");
+       return EXIT_FAILURE;
+    }
+  }
 
   return 0;
 }
