@@ -22,10 +22,14 @@ def sanitize_path(path, subchar='-', invalid_chars=r'[^a-zA-Z0-9-_.]',
 
     Any part coming in will be made relative first (by cutting leading
     slashes). Invalid characters (see ``invalid_chars``) are removed and
-    replaced with ``subchar``.
+    replaced with ``subchar``. A suffix can be forced upon the path as well.
 
     :param path: Path to sanitize (string or Path).
-    :return: A Path instance
+    :param subchar: Character used to substitute illegal path components with.
+    :param invalid_chars: A regular expression that matches invalid characters.
+    :param invalid_comps: A collection of path components that are not allowed.
+    :param force_suffix: The suffix to force onto each path.
+    :return: A Path instance denoting a relative path.
     """
     unsafe = Path(path)
 
