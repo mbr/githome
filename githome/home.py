@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from .model import Base, User, PublicKey, ConfigSetting
-from .util import _update_block, sanitize_path
+from .util import block_update, sanitize_path
 
 
 log = logbook.Logger('githome')
@@ -132,11 +132,11 @@ class GitHome(object):
 
         old = ak.open().read()
 
-        ak.open('wb').write(_update_block(
-            old,
-            self.get_authorized_keys_block(),
+        ak.open('wb').write(block_update(
             start_marker,
             end_marker,
+            old,
+            self.get_authorized_keys_block(),
         ))
         log.info('Updated {}'.format(ak))
 
