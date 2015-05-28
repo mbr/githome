@@ -23,6 +23,13 @@ def block_replace(start_marker, end_marker, buf, replacement):
     return buf[:start + len(start_marker)] + replacement + buf[end:]
 
 
+def block_update(start_marker, end_marker, buf, content, pad='\n\n'):
+    try:
+        return block_replace(start_marker, end_marker, buf, content)
+    except ValueError:
+        return buf + pad + start_marker + content + end_marker
+
+
 def sanitize_path(path, subchar='-', invalid_chars=r'[^a-zA-Z0-9-_.]',
                   invalid_comps=('.', '..', '.git'), force_suffix='.git'):
     """Sanitizes a path by making it relative and git safe.

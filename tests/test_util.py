@@ -1,4 +1,4 @@
-from githome.util import sanitize_path, block_replace
+from githome.util import sanitize_path, block_replace, block_update
 import pytest
 
 
@@ -94,3 +94,13 @@ def test_overlapping_block_replace_fails():
 def test_block_replace_only_replaces_first():
     assert (block_replace('foo', 'bar', 'fooxbaryfoozbar', '!!') ==
             'foo!!baryfoozbar')
+
+
+def test_block_update_existing():
+    assert (block_update('foo', 'bar', 'fooxbaryfoozbar', '!!') ==
+            'foo!!baryfoozbar')
+
+
+def test_block_update_new():
+    assert (block_update('{{\n', '\n}}\n', 'foobar', 'xy') ==
+            'foobar\n\n{{\nxy\n}}\n')
