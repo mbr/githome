@@ -42,7 +42,7 @@ def test_block_replace(start, end):
     buf = 'sample data\n\n' + start + 'foo\n' + end + 'xyz'
     buf2 = 'sample data\n\n' + start + 'bar\n' + end + 'xyz'
 
-    assert buf2 == block_replace(buf, 'bar\n', start, end)
+    assert buf2 == block_replace(start, end, buf, 'bar\n')
 
 
 def test_block_replace_sample_block():
@@ -71,26 +71,26 @@ new contents
 footer
 """
 
-    assert block_replace(before,
-                         'new contents\n',
-                         '### BEGIN ###\n',
-                         '### END ###\n') == after
+    assert block_replace('### BEGIN ###\n',
+                         '### END ###\n',
+                         before,
+                         'new contents\n') == after
 
 
 def test_empty_block_replace():
-    assert block_replace('foobar', '!!', 'foo', 'bar') == 'foo!!bar'
+    assert block_replace('foo', 'bar', 'foobar', '!!') == 'foo!!bar'
 
 
 def test_block_replace_not_found():
     with pytest.raises(ValueError):
-        block_replace('foobar', '!!', '#', '#')
+        block_replace('#', '#', 'foobar', '!!')
 
 
 def test_overlapping_block_replace_fails():
     with pytest.raises(ValueError):
-        assert block_replace('###', 'x', '##', '##')
+        assert block_replace('##', '##', '###', 'x',)
 
 
 def test_block_replace_only_replaces_first():
-    assert (block_replace('fooxbaryfoozbar', '!!', 'foo', 'bar') ==
+    assert (block_replace('foo', 'bar', 'fooxbaryfoozbar', '!!') ==
             'foo!!baryfoozbar')

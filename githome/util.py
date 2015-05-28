@@ -16,7 +16,7 @@ def _update_block(buf, content, start_marker, end_marker):
     return buf + '\n\n' + block
 
 
-def block_replace(buf, replacement, start_marker, end_marker):
+def block_replace(start_marker, end_marker, buf, replacement):
     start = buf.index(start_marker)
     end = buf.index(end_marker, start + len(start_marker))
 
