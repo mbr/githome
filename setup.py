@@ -38,11 +38,11 @@ setup(
     package_data={
         'githome': ['gh_client'],
     },
-    install_requires=['logbook', 'click', 'pathlib', 'sqlalchemy',
+    install_requires=['logbook', 'click>=4.0', 'pathlib', 'sqlalchemy',
                       'sshkeys>=0.4'],
     entry_points={
         'console_scripts': [
-            'githome = githome.cmd:run_cli',
+            'githome = githome.cmd:cli',
         ],
     },
     cmdclass={

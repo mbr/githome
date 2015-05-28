@@ -1,4 +1,5 @@
 import logbook
+import logging
 import pathlib
 import os
 import shlex
@@ -7,7 +8,7 @@ import sys
 import click
 from sshkeys import Key as SSHKey
 from logbook import StderrHandler, NullHandler, Logger
-
+from logbook.compat import redirect_logging
 from .home import GitHome
 from .model import User, PublicKey, ConfigSetting
 
@@ -20,45 +21,42 @@ def abort(status=1):
 
 
 @click.group()
-@click.option('-d', '--debug/--no-debug', default=False,
-              help='Output debugging-level info in logs')
-@click.option('--githome', default='.', metavar='PATH', type=pathlib.Path)
-@click.option('--remote', default=False, is_flag=True)
+@click.option('-d', '--debug', 'loglevel', flag_value=logbook.DEBUG)
+@click.option('-q', '--quiet', 'loglevel', flag_value=logbook.WARNING)
+@click.option('--githome', default='.', metavar='PATH', type=click.Path())
 @click.pass_context
-def cli(ctx, debug, githome, remote):
+def cli(ctx, githome, loglevel):
+    ctx.obj = {}
+
+    if loglevel is None:
+        loglevel = logbook.INFO
+
+    # setup sqlalchemy loglevel
+    if loglevel is logging.DEBUG:
+        redirect_logging()
+        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+
     # setup console logging
     NullHandler().push_application()
-    loglevel = logbook.DEBUG if debug else logbook.INFO
+    StderrHandler(level=loglevel).push_application()
 
-    if not remote:
-        handler = StderrHandler(level=loglevel)
-        if debug:
-            import logging
-            logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
-    else:
-        # when connection via SSH, only output errors
-        handler = StderrHandler(level=logbook.WARNING,
-                                format_string='{record.message}')
+    ctx.obj['githome_path'] = pathlib.Path(githome)
 
-    handler.push_application()
-
-    ctx.obj['debug'] = debug
-
-    # if we're just calling init, pass to init
+    # if we're just calling init, do not initialize githome
     if ctx.invoked_subcommand == 'init':
         return
 
     # check if the home is valid
     if not GitHome.check(githome):
-        log.critical('Not a valid githome: "{}"; use {} init to initialize it'
+        log.critical('Not a valid githome: "{}"; use {} init to initialize it '
                      'first.'.format(githome, 'githome'))
         abort(1)
 
     # create and add to context
-    gh = GitHome(githome)
+    gh = GitHome(ctx.obj['githome_path'])
     ctx.obj['githome'] = gh
 
-    # setup logging to files
+    # log to file in githome
     gh.get_log_handler(level=loglevel, bubble=True).push_application()
 
 
@@ -301,8 +299,10 @@ def list_config(obj):
 
 
 @cli.command()
-@click.argument('path', type=pathlib.Path)
-def init(path):
+@click.pass_obj
+def init(obj):
+    path = obj['githome_path']
+
     if path.exists():
         if [p for p in path.iterdir()]:
             log.critical('Directory {} exists and is not empty'.format(path))
@@ -314,13 +314,8 @@ def init(path):
     # initialize
     gh = GitHome.initialize(path)
     log.info('Initialized new githome in {}.'.format(path))
-    log.info('{} will be updated on key additions.'.format(
-        gh.get_config('authorized_keys_file'),
-    ))
-    log.info('Using githome at {}.'.format(
-        gh.get_config('githome_executable'),
-    ))
 
-
-def run_cli():
-    return cli(obj={})
+    log.info('Initial configuration:\n{}'.format('\n'.join(
+        '{}: {}'.format(k, v)
+        for k, v in sorted(gh.get_full_config().iteritems())
+    )))

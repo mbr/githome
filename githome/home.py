@@ -31,6 +31,10 @@ class GitHome(object):
         self.bind = create_engine(self.dsn)
         self.session = scoped_session(sessionmaker(bind=self.bind))
 
+    def save(self):
+        self.session.commit()
+
+    # configuration handling
     def get_config(self, key):
         cs = self.session.query(ConfigSetting).get(key)
         return None if cs is None else cs.value
@@ -41,6 +45,10 @@ class GitHome(object):
             raise KeyError(key)
         cs.value = value
         self.session.add(cs)
+
+    def get_full_config(self):
+        cs = self.session.query(ConfigSetting).order_by(ConfigSetting.key)
+        return dict((c.key, c.value) for c in cs)
 
     def get_repo_path(self, unsafe_path, create=False):
         rel_path = sanitize_path(unsafe_path)
@@ -142,15 +150,28 @@ class GitHome(object):
 
     @classmethod
     def check(cls, path):
-        return cls._make_db_path(path).exists()
+        """Check if a githome exists at path.
+
+        :param path: A :class:`~pathlib.Path`.
+        """
+        return (path / cls.DB_PATH).exists()
 
     @classmethod
-    def initialize(cls, path):
+    def initialize(cls, path, initial_cfg={}):
+        """Initialize new githome at path.
+
+        :param path: A :class:`~pathlib.Path`.
+        :param initial_cfg:: Additional configuration settings.
+        """
+        # create paths
         (path / cls.LOG_PATH).mkdir()
         (path / cls.REPOS_PATH).mkdir()
         (path / cls.TEMPLATE_PATH).mkdir()
 
+        # instantiate
         gh = cls(path)
+
+        # create database
         Base.metadata.create_all(bind=gh.bind)
 
         # create initial configuration
@@ -161,6 +182,8 @@ class GitHome(object):
             'githome_executable': str(Path(sys.argv[0]).absolute()),
             'githome_id': str(uuid.uuid4()),
         }
+
+        cfgs.update(initial_cfg)
 
         for k, v in cfgs.items():
             gh.session.add(ConfigSetting(key=k, value=v))
