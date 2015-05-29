@@ -2,7 +2,7 @@ from binascii import hexlify
 
 from sqlacfg import ConfigSettingMixin
 from sqlalchemy import Column, Integer, String, ForeignKey, LargeBinary
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 from sshkeys import Key as SSHKey
 
@@ -12,12 +12,10 @@ Session = sessionmaker()
 
 
 class User(Base):
-    __tablename__ = 'user'
+    __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True, nullable=False)
-    public_keys = relationship(lambda: PublicKey, backref='user',
-                               cascade='all')
 
     def __init__(self, name, **kwargs):
         name = name.lower()
@@ -28,10 +26,13 @@ class User(Base):
 
 
 class PublicKey(Base):
-    __tablename__ = 'public_key'
+    __tablename__ = 'public_keys'
 
     fingerprint = Column(String, primary_key=True)
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
+    user = relationship(User,
+                        backref=backref('public_keys', cascade=
+                                        'all, delete-orphan'))
     data = Column(LargeBinary, nullable=False)
 
     @classmethod
