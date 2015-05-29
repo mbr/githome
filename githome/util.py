@@ -1,5 +1,7 @@
-from pathlib import Path
 import re
+
+import click
+from pathlib import Path
 
 
 def block_replace(start_marker, end_marker, buf, replacement):
