@@ -1,6 +1,6 @@
 from binascii import hexlify
-import json
 
+from sqlacfg import ConfigSettingMixin
 from sqlalchemy import Column, Integer, String, ForeignKey, LargeBinary
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -42,20 +42,5 @@ class PublicKey(Base):
         return SSHKey(self.data, comment, options)
 
 
-class ConfigSetting(Base):
-    __tablename__ = 'configsetting'
-
-    def __init__(self, key, value):
-        self.key = key
-        self.value = value
-
-    @property
-    def value(self):
-        return json.loads(self.json_value)
-
-    @value.setter
-    def value(self, v):
-        self.json_value = json.dumps(v)
-
-    key = Column(String, primary_key=True)
-    json_value = Column(String, nullable=True)
+class ConfigSetting(Base, ConfigSettingMixin):
+    __tablename__ = 'config'

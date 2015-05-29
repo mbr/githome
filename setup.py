@@ -39,7 +39,7 @@ setup(
         'githome': ['gh_client'],
     },
     install_requires=['logbook', 'click>=4.0', 'pathlib', 'sqlalchemy',
-                      'sshkeys>=0.4'],
+                      'sshkeys>=0.4', 'sqlacfg'],
     entry_points={
         'console_scripts': [
             'githome = githome.cmd:cli',

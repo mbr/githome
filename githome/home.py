@@ -6,6 +6,7 @@ import sys
 import uuid
 
 import logbook
+from sqlacfg import Config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
@@ -29,25 +30,10 @@ class GitHome(object):
         self.path = Path(path)
         self.bind = create_engine(self.dsn)
         self.session = scoped_session(sessionmaker(bind=self.bind))
+        self.config = Config(ConfigSetting, self.session)
 
     def save(self):
         self.session.commit()
-
-    # configuration handling
-    def get_config(self, key):
-        cs = self.session.query(ConfigSetting).get(key)
-        return None if cs is None else cs.value
-
-    def set_config(self, key, value):
-        cs = self.session.query(ConfigSetting).get(key)
-        if cs is None:
-            raise KeyError(key)
-        cs.value = value
-        self.session.add(cs)
-
-    def get_full_config(self):
-        cs = self.session.query(ConfigSetting).order_by(ConfigSetting.key)
-        return dict((c.key, c.value) for c in cs)
 
     def get_repo_path(self, unsafe_path, create=False):
         rel_path = sanitize_path(unsafe_path)
@@ -173,19 +159,19 @@ class GitHome(object):
         Base.metadata.create_all(bind=gh.bind)
 
         # create initial configuration
-        cfgs = {
-            'update_authorized_keys': True,
-            'authorized_keys_file': os.path.abspath(os.path.expanduser(
-                '~/.ssh/authorized_keys')),
-            'githome_executable': str(Path(sys.argv[0]).absolute()),
-            'githome_id': str(uuid.uuid4()),
-        }
+        local = gh.config['local']
+        local['update_authorized_keys'] = True
+        local['authorized_keys_file'] = os.path.abspath(
+            os.path.expanduser('~/.ssh/authorized_keys')
+        )
+        local['githome_executable'] = str(Path(sys.argv[0]).absolute())
+        gh.config['githome']['id'] = str(uuid.uuid4())
 
-        cfgs.update(initial_cfg)
+        # update with user-supplied values
+        for section, values in initial_cfg.iteritems():
+            gh.config[section].update(section)
 
-        for k, v in cfgs.items():
-            gh.session.add(ConfigSetting(key=k, value=v))
-        gh.session.commit()
+        gh.save()
 
         return gh
 

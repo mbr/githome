@@ -6,9 +6,11 @@ import shlex
 import sys
 
 import click
-from sshkeys import Key as SSHKey
 from logbook import StderrHandler, NullHandler, Logger
 from logbook.compat import redirect_logging
+from sqlacfg.format import ini_format
+from sshkeys import Key as SSHKey
+
 from .home import GitHome
 from .model import User, PublicKey, ConfigSetting
 
@@ -314,8 +316,4 @@ def init(obj):
     # initialize
     gh = GitHome.initialize(path)
     log.info('Initialized new githome in {}.'.format(path))
-
-    log.info('Initial configuration:\n{}'.format('\n'.join(
-        '{}: {}'.format(k, v)
-        for k, v in sorted(gh.get_full_config().iteritems())
-    )))
+    log.info('Configuration:\n{}'.format(ini_format(gh.config)))
