@@ -20,7 +20,6 @@ class GitHome(object):
     LOG_PATH = 'log'
     REPOS_PATH = 'repos'
     DB_PATH = 'githome.sqlite'
-    TEMPLATE_PATH = 'template'
 
     @property
     def dsn(self):
@@ -66,7 +65,6 @@ class GitHome(object):
             subprocess.check_call([
                 'git', 'init', '--quiet', '--bare',
                 '--shared=0600', str(safe_path),
-                '--template', str(self.template_path),
             ])
 
         return safe_path
