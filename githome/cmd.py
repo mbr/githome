@@ -10,6 +10,7 @@ import click
 from logbook import StderrHandler, NullHandler, Logger
 from logbook.compat import redirect_logging
 from sqlacfg.format import ini_format
+from sshkeys import Key as SSHKey
 
 from .home import GitHome
 
@@ -244,6 +245,8 @@ def key_group():
 def add_key(obj, username, keyfiles):
     gh = obj['githome']
 
+    user = gh.get_user_by_name(username)
+
     for keyfile in keyfiles:
         for line in keyfile:
             # skip blank lines
@@ -251,30 +254,31 @@ def add_key(obj, username, keyfiles):
             if not line:
                 continue
 
-            pkey = gh.add_key(username, line)
+            pkey = SSHKey.from_pubkey_line(line)
+            gh.add_key(user, pkey)
 
-            log.info('Addingkey {} to user {}'.format(
-                pkey.as_pkey().readable_fingerprint, username)
+            log.info('Adding key {} to user {}'.format(
+                pkey.readable_fingerprint, user.name)
             )
 
     gh.save()
 
 
-@key_group.command('remove')
-@click.argument('fingerprints', nargs=-1)
+@key_group.command('rm',
+                   help='Remove keys from database')
+@click.argument('fingerprints', nargs=-1,
+                type=RegEx(r'(?:[A-Za-z0-9]{2}:?){16}'))
 @click.pass_obj
-def remove_key(obj, fingerprints):
+def delete_key(obj, fingerprints):
     gh = obj['githome']
 
     for fingerprint in fingerprints:
-        key = gh.get_key_by_fingerprint(fingerprint.replace(':', ''))
-
-        if not key:
+        fp = fingerprint.replace(':', '').lower()
+        if not gh.remove_key(fp):
             log.warning('Key {} not found.'.format(fingerprint))
-            continue
 
     if fingerprints:
-        gh.update_authorized_keys()
+        gh.save()
 
 
 @cli.group('config', help='Adjust configuration and settings')

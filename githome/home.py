@@ -11,7 +11,6 @@ from sqlacfg import Config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-from sshkeys import Key as SSHKey
 from .model import Base, User, PublicKey, ConfigSetting
 from .util import block_update, sanitize_path
 
@@ -24,6 +23,10 @@ class GitHomeError(Exception):
 
 
 class UserNotFoundError(GitHomeError):
+    pass
+
+
+class KeyNotFoundError(GitHomeError):
     pass
 
 
@@ -69,19 +72,18 @@ class GitHome(object):
 
         return qry
 
-    def add_key(self, username, line):
-        user = self.get_user_by_name(username)
-        pkey = PublicKey.from_pkey(SSHKey.from_pubkey_line(line))
-
-        if self.session.query(PublicKey).filter_by(
-            fingerprint=pkey.fingerprint
-        ) is not None:
+    def add_key(self, user, pkey):
+        try:
+            self.get_key_by_fingerprint(pkey.fingerprint)
+        except KeyNotFoundError:
+            key = PublicKey.from_pkey(pkey)
+        else:
             raise GitHomeError('Key {} already in database'.format(
-                pkey.as_pkey().readable_fingerprint
+                pkey.readable_fingerprint
             ))
 
-        pkey.user = user
-        self.session.add(pkey)
+        key.user = user
+        self.session.add(key)
 
         self._update_authkeys = True
         return pkey
@@ -124,7 +126,13 @@ class GitHome(object):
             raise_from(UserNotFoundError('User {} not found'.format(name)), e)
 
     def get_key_by_fingerprint(self, fingerprint):
-        return self.session.query(PublicKey).get(hexlify(fingerprint))
+        try:
+            return (self.session.query(PublicKey)
+                                .filter_by(fingerprint=hexlify(fingerprint))
+                                .one())
+        except NoResultFound as e:
+            raise_from(KeyNotFoundError('Key {} not found'.format(hexlify
+                       (fingerprint))), e)
 
     def get_authorized_keys_block(self):
         pkeys = []
