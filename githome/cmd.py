@@ -327,7 +327,6 @@ def init(obj, config, dir):
 
     # set configuration options
     for name, value in config:
-
         gh.config.cset(name, value)
 
-    log.info('Configuration:\n{}'.format(ini_format(gh.config)))
+    log.debug('Configuration:\n{}'.format(ini_format(gh.config)))
