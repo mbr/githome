@@ -2,6 +2,7 @@ import logbook
 import logging
 import pathlib
 import os
+import re
 import shlex
 import sys
 
@@ -37,6 +38,16 @@ class ConfigName(click.ParamType):
         if not '.' in value:
             raise click.BadParameter('Configuration name must include .')
         return value
+
+
+class RegEx(click.ParamType):
+    def __init__(self, exp):
+        super(RegEx, self).__init__()
+        self.exp = re.compile(exp)
+
+    def convert(self, value, param, ctx):
+        if not self.exp.match(param):
+            raise click.BadParameter('Invalid value')
 
 
 def abort(status=1):
