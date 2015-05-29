@@ -72,20 +72,16 @@ class GitHome(object):
     def get_key_by_fingerprint(self, fingerprint):
         return self.session.query(PublicKey).get(hexlify(fingerprint))
 
-    def get_authorized_keys_block(self, debug=False):
+    def get_authorized_keys_block(self):
         pkeys = []
         for key in self.session.query(PublicKey):
             args = [
                 self.config['local']['githome_executable'],
             ]
 
-            if debug:
-                args.append('--debug')
-
             args.extend([
                 '--githome',
                 str(self.path.absolute()),
-                '--remote',
                 'shell',
                 key.user.name,
             ])

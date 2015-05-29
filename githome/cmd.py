@@ -150,14 +150,19 @@ def shell(obj, username):
     os.execlp(binary, *safe_args)
 
 
-@cli.command()
-@click.option('--cmd', default=None,
-              help='Path to executable for githome.')
+@cli.group('auth_keys',
+           help='Command relating to ssh authorized_keys files')
+def auth_keys():
+    pass
+
+
+@auth_keys.command('print',
+                   help='Print contents of an authorized_keys file')
 @click.pass_obj
-def authorized_keys(obj, cmd):
+def show_auth_keys(obj):
     gh = obj['githome']
 
-    click.echo(gh.get_authorized_keys_block(obj['debug']))
+    click.echo(gh.get_authorized_keys_block())
 
 
 @cli.group('user')
