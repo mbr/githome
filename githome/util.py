@@ -10,6 +10,8 @@ def block_replace(start_marker, end_marker, buf, replacement):
 
 
 def block_update(start_marker, end_marker, buf, content, pad='\n\n'):
+    if not buf:
+        pad = ''
     try:
         return block_replace(start_marker, end_marker, buf, content)
     except ValueError:
