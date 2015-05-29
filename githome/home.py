@@ -43,8 +43,12 @@ class GitHome(object):
         self._update_authkeys = True
         return rc >= 1
 
-    def save(self):
-        self.session.commit()
+    def iter_users(self, order_by=User.name):
+        qry = self.session.query(User)
+        if order_by:
+            qry = qry.order_by(order_by)
+
+        return qry
 
     def get_repo_path(self, unsafe_path, create=False):
         rel_path = sanitize_path(unsafe_path)

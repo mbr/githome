@@ -195,7 +195,8 @@ def create_user(obj, name):
     log.info('Created user {}'.format(user.name))
 
 
-@user_group.command('rm')
+@user_group.command('rm',
+                    help='Delete a user account')
 @click.argument('name')
 @click.pass_obj
 def delete_user(obj, name):
@@ -205,13 +206,15 @@ def delete_user(obj, name):
         gh.save()
 
 
-@user_group.command('list')
-@click.option('-k', '--keys', is_flag=True, default=False)
+@user_group.command('list',
+                    help='List user accounts')
+@click.option('-k', '--keys', is_flag=True,
+              help='Also show public key fingerprints')
 @click.pass_obj
 def list_users(obj, keys):
     gh = obj['githome']
 
-    for user in gh.session.query(User).order_by(User.id):
+    for user in gh.iter_users():
         line = '{user.id:4d} {user.name:20s}'.format(user=user)
 
         if keys and user.public_keys:
