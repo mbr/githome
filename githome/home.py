@@ -47,11 +47,16 @@ class GitHome(object):
         self._update_authkeys = False
 
     def save(self):
+        self.session.commit()
+
         if self._update_authkeys:
             self._update_authkeys = False
             log.critical('missing implementation for _update_authkeys')
 
-        self.session.commit()
+            if not self.config['local']['update_authorized_keys']:
+                log.info('Not updating authorized_keys, disabled in config')
+            else:
+                self.update_authorized_keys()
 
     def create_user(self, name):
         user = User(name=name)
