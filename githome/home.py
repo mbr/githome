@@ -150,7 +150,6 @@ class GitHome(object):
         # create paths
         (path / cls.LOG_PATH).mkdir()
         (path / cls.REPOS_PATH).mkdir()
-        (path / cls.TEMPLATE_PATH).mkdir()
 
         # instantiate
         gh = cls(path)
