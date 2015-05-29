@@ -88,6 +88,10 @@ class GitHome(object):
         self._update_authkeys = True
         return pkey
 
+    def delete_key(self, fingerprint):
+        self.session.delete(self.get_key_by_fingerprint(fingerprint))
+        self._update_authkeys = True
+
     def get_repo_path(self, unsafe_path, create=False):
         rel_path = sanitize_path(unsafe_path)
         safe_path = self.path / self.REPOS_PATH / sanitize_path(unsafe_path)

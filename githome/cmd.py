@@ -1,3 +1,4 @@
+from binascii import unhexlify
 import logbook
 import logging
 import pathlib
@@ -273,9 +274,9 @@ def delete_key(obj, fingerprints):
     gh = obj['githome']
 
     for fingerprint in fingerprints:
-        fp = fingerprint.replace(':', '').lower()
-        if not gh.remove_key(fp):
-            log.warning('Key {} not found.'.format(fingerprint))
+        fp = unhexlify(fingerprint.replace(':', '').lower())
+        gh.delete_key(fp)
+        log.info('Deleting key {}'.format(fingerprint))
 
     if fingerprints:
         gh.save()
