@@ -64,3 +64,35 @@ def sanitize_path(path, subchar='-', invalid_chars=r'[^a-zA-Z0-9-_.]',
         components[-1] += force_suffix
 
     return Path(*components)
+
+
+class ConfigValue(click.ParamType):
+    def convert(self, value, param, ctx):
+        # type for configuration value given on the command line
+        if value.isdigit():
+            return int(value)
+
+        if value.lower() in ('on', 'yes', 'true'):
+            return True
+        elif value.lower() in ('off', 'no', 'false'):
+            return False
+
+        return value
+
+
+class ConfigName(click.ParamType):
+    def convert(self, value, param, ctx):
+        if not '.' in value:
+            raise click.BadParameter('Configuration name must include .')
+        return value
+
+
+class RegEx(click.ParamType):
+    def __init__(self, exp):
+        super(RegEx, self).__init__()
+        self.exp = re.compile(exp)
+
+    def convert(self, value, param, ctx):
+        if not self.exp.match(value):
+            raise click.BadParameter('Invalid value')
+        return value
