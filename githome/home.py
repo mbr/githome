@@ -117,17 +117,6 @@ class GitHome(object):
 
         return safe_path
 
-    def get_log_handler(self, **kwargs):
-        log_path = self.path / self.LOG_PATH
-        # ensure log path exists
-        if not log_path.exists():
-            log_path.mkdir()
-
-        return logbook.RotatingFileHandler(
-            str(log_path / 'githome.log'),
-            **kwargs
-        )
-
     def get_user_by_name(self, name):
         try:
             return self.session.query(User).filter_by(name=name.lower()).one()
@@ -211,7 +200,6 @@ class GitHome(object):
         :param initial_cfg:: Additional configuration settings.
         """
         # create paths
-        (path / cls.LOG_PATH).mkdir()
         (path / cls.REPOS_PATH).mkdir()
 
         # instantiate

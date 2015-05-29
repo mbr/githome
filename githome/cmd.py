@@ -91,9 +91,6 @@ def cli(ctx, githome, loglevel):
     gh = GitHome(ctx.obj['githome_path'])
     ctx.obj['githome'] = gh
 
-    # log to file in githome
-    gh.get_log_handler(level=loglevel, bubble=True).push_application()
-
 
 @cli.command()
 @click.argument('username')
