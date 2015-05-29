@@ -141,7 +141,7 @@ class GitHome(object):
         return (path / cls.DB_PATH).exists()
 
     @classmethod
-    def initialize(cls, path, initial_cfg={}):
+    def initialize(cls, path):
         """Initialize new githome at path.
 
         :param path: A :class:`~pathlib.Path`.
@@ -165,10 +165,6 @@ class GitHome(object):
         )
         local['githome_executable'] = str(Path(sys.argv[0]).absolute())
         gh.config['githome']['id'] = str(uuid.uuid4())
-
-        # update with user-supplied values
-        for section, values in initial_cfg.iteritems():
-            gh.config[section].update(section)
 
         gh.save()
 

@@ -300,10 +300,14 @@ def list_config(obj):
         click.echo('{cs.key:25s} {cs.value}'.format(cs=cs))
 
 
-@cli.command()
+@cli.command(help='Initialize a new githome in an empty directy')
+@click.option('--config', '-c', multiple=True, nargs=2,
+              help='Additional initial configuration settings, in the form '
+                   'of: section.key value.')
+@click.argument('dir', default=None, required=False)
 @click.pass_obj
-def init(obj):
-    path = obj['githome_path']
+def init(obj, config, dir):
+    path = obj['githome_path'] if dir is None else pathlib.Path(dir)
 
     if path.exists():
         if [p for p in path.iterdir()]:
@@ -315,5 +319,21 @@ def init(obj):
 
     # initialize
     gh = GitHome.initialize(path)
-    log.info('Initialized new githome in {}.'.format(path))
+    log.info('Initialized new githome in {}'.format(path))
+
+    # set configuration options
+    for name, value in config:
+        if '.' not in name:
+            raise click.BadParameter('No section given for {}'.format(name))
+
+        if value.isnumeric():
+            value = int(value)
+
+        if value in ('on', 'yes', 'true'):
+            value = True
+        elif value in ('off', 'no', 'false'):
+            value = False
+
+        gh.config.cset(name, value)
+
     log.info('Configuration:\n{}'.format(ini_format(gh.config)))
