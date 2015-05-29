@@ -10,10 +10,8 @@ import click
 from logbook import StderrHandler, NullHandler, Logger
 from logbook.compat import redirect_logging
 from sqlacfg.format import ini_format
-from sshkeys import Key as SSHKey
 
 from .home import GitHome
-from .model import User, PublicKey
 
 
 log = Logger('cli')
@@ -231,48 +229,34 @@ def list_users(obj, keys):
                 ))
 
 
-@cli.group('key')
+@cli.group('key',
+           help='Manage SSH public keys')
 def key_group():
     pass
 
 
-@key_group.command('add')
+@key_group.command('add',
+                   help='Add public keys to user')
 @click.argument('username')
 @click.argument('keyfiles', type=click.File('rb'), nargs=-1)
 @click.pass_obj
 def add_key(obj, username, keyfiles):
     gh = obj['githome']
 
-    user = gh.get_user_by_name(username)
-
-    if not user:
-        log.critical('No such user: {}'.format(username))
-        abort(1)
-
     for keyfile in keyfiles:
         for line in keyfile:
+            # skip blank lines
             line = line.strip()
             if not line:
                 continue
 
-            pkey = SSHKey.from_pubkey_line(line)
-            _k = gh.get_key_by_fingerprint(pkey.fingerprint)
-            if _k:
-                log.warning('Key {} ignored, already registered for {}'.format(
-                    pkey.readable_fingerprint, _k.user.name
-                ))
-                continue
+            pkey = gh.add_key(username, line)
 
-            log.info('Adding key {} to user {}...'.format(
-                pkey.readable_fingerprint, user.name)
+            log.info('Addingkey {} to user {}'.format(
+                pkey.as_pkey().readable_fingerprint, username)
             )
-            k = PublicKey.from_pkey(pkey)
-            k.user = user
-            gh.session.add(k)
 
-    gh.session.commit()
-
-    gh.update_authorized_keys()
+    gh.save()
 
 
 @key_group.command('remove')
@@ -290,17 +274,6 @@ def remove_key(obj, fingerprints):
 
     if fingerprints:
         gh.update_authorized_keys()
-
-
-@key_group.command('list')
-@click.pass_obj
-def list_keys(obj):
-    gh = obj['githome']
-
-    for key in gh.session.query(PublicKey).order_by(PublicKey.user_id):
-        click.echo('{} ({})'.format(
-            key.as_pkey().readable_fingerprint, key.user.name
-        ))
 
 
 @cli.group('config', help='Adjust configuration and settings')

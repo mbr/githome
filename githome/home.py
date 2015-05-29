@@ -5,16 +5,26 @@ import subprocess
 import sys
 import uuid
 
+from future.utils import raise_from
 import logbook
 from sqlacfg import Config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-
+from sqlalchemy.orm.exc import NoResultFound
+from sshkeys import Key as SSHKey
 from .model import Base, User, PublicKey, ConfigSetting
 from .util import block_update, sanitize_path
 
 
 log = logbook.Logger('githome')
+
+
+class GitHomeError(Exception):
+    pass
+
+
+class UserNotFoundError(GitHomeError):
+    pass
 
 
 class GitHome(object):
@@ -57,6 +67,23 @@ class GitHome(object):
 
         return qry
 
+    def add_key(self, username, line):
+        user = self.get_user_by_name(username)
+        pkey = PublicKey.from_pkey(SSHKey.from_pubkey_line(line))
+
+        if self.session.query(PublicKey).filter_by(
+            fingerprint=pkey.fingerprint
+        ) is not None:
+            raise GitHomeError('Key {} already in database'.format(
+                pkey.as_pkey().readable_fingerprint
+            ))
+
+        pkey.user = user
+        self.session.add(pkey)
+
+        self._update_authkeys = True
+        return pkey
+
     def get_repo_path(self, unsafe_path, create=False):
         rel_path = sanitize_path(unsafe_path)
         safe_path = self.path / self.REPOS_PATH / sanitize_path(unsafe_path)
@@ -89,7 +116,10 @@ class GitHome(object):
         )
 
     def get_user_by_name(self, name):
-        return self.session.query(User).filter_by(name=name.lower()).first()
+        try:
+            return self.session.query(User).filter_by(name=name.lower()).one()
+        except NoResultFound as e:
+            raise_from(UserNotFoundError('User {} not found'.format(name)), e)
 
     def get_key_by_fingerprint(self, fingerprint):
         return self.session.query(PublicKey).get(hexlify(fingerprint))
