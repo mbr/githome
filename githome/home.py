@@ -30,6 +30,14 @@ class KeyNotFoundError(GitHomeError):
     pass
 
 
+class PermissionDenied(GitHomeError):
+    pass
+
+
+class NoSuchRepository(GitHomeError):
+    pass
+
+
 class GitHome(object):
     LOG_PATH = 'log'
     REPOS_PATH = 'repos'
@@ -97,25 +105,21 @@ class GitHome(object):
         self.session.delete(self.get_key_by_fingerprint(fingerprint))
         self._update_authkeys = True
 
-    def get_repo_path(self, unsafe_path, create=False):
-        rel_path = sanitize_path(unsafe_path)
-        safe_path = self.path / self.REPOS_PATH / sanitize_path(unsafe_path)
+    def get_repo(self, rel_path, create=False):
+        path = self.path / self.REPOS_PATH / rel_path
 
-        if not safe_path.exists() or not safe_path.is_dir():
-            if not create:
-                raise ValueError('Repository does not exist')
-            log.warning('Creating NEW repository \'{}\' in githome'.format(
-                rel_path)
-            )
-
-            # create the repo
-            safe_path.mkdir(parents=True)
-            subprocess.check_call([
-                'git', 'init', '--quiet', '--bare',
-                '--shared=0600', str(safe_path),
-            ])
-
-        return safe_path
+        if not path.exists() or not path.is_dir():
+            if create:
+                # create the repo
+                path.mkdir(parents=True)
+                subprocess.check_call([
+                    'git', 'init', '--quiet', '--bare',
+                    '--shared=0600', str(path),
+                ])
+            else:
+                raise NoSuchRepository('Repository {} no found and not '
+                                       'creating.'.format(rel_path))
+        return path
 
     def get_user_by_name(self, name):
         try:
@@ -183,6 +187,43 @@ class GitHome(object):
             self.get_authorized_keys_block(),
         ))
         log.info('Updated {}'.format(ak))
+
+    def authorize_command(self, user, command):
+        CMD_WHITELIST = [
+            'git-upload-pack',
+            'git-receive-pack',
+            'git-upload-archive',
+        ]
+
+        if not command[0] in CMD_WHITELIST:
+            raise PermissionDenied(
+                '{} is not a whitelisted command.'.format(command[0])
+            )
+
+        if len(command) < 2:
+            raise PermissionDenied(
+                log.critical('Missing repository parameter')
+            )
+
+        # FIXME: check user read rights to repository
+        # FIXME: check if user may create repositories
+        can_create = False
+
+        repo_path = self.get_repo(sanitize_path(command[1]), create=can_create)
+        # FIXME: if necessary, check write rights to repository
+
+        if command[0] == 'git-upload-pack':
+            return [command[0], '--strict',   # do not try /.git
+                    str(repo_path)]
+        elif command[0] == 'git-receive-pack':
+            return [command[0], str(repo_path)]
+        elif command[0] == 'git-upload-archive':
+            return [command[0], str(repo_path)]
+        else:
+            raise GitHomeError(
+                'Command {} is whitelisted, but not explicitly handled.'
+                .format(command[0])
+            )
 
     @classmethod
     def check(cls, path):

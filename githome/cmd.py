@@ -96,67 +96,27 @@ def cli(ctx, githome, loglevel):
 @click.argument('username')
 @click.pass_obj
 def shell(obj, username):
-    log = Logger('githome-shell')
-
     gh = obj['githome']
 
     # get user
     user = gh.get_user_by_name(username)
 
-    if not user:
-        log.critical('Invalid user: {}'.format(username))
-        abort(1)
-
-    log.info('Shell auth from: {}.'.format(user.name))
     log = Logger('githome-shell [{}]'.format(user.name))
 
     # we've got our user, now authorize him or not
-    # FIXME: missing any sort of authorization system
-
     shell_cmd = shlex.split(os.environ.get('SSH_ORIGINAL_COMMAND', ''))
     log.debug('SSH_ORIGINAL_COMMAND {!r}'.format(shell_cmd))
-
-    CMD_WHITELIST = [
-        'git-upload-pack',
-        'git-receive-pack',
-        'git-upload-archive',
-    ]
 
     if not shell_cmd:
         log.critical('No shell command given')
         abort(1)
 
-    if not shell_cmd[0] in CMD_WHITELIST:
-        log.critical('{} is not a whitelisted command.'.format(shell_cmd[0]))
-        abort(1)
+    cmd = gh.authorize_command(user, shell_cmd)
 
-    if len(shell_cmd) < 2:
-        log.critical('Missing repository parameter')
-        abort(2)
+    log.debug('Executing {!r}', cmd)
 
-    try:
-        repo_path = gh.get_repo_path(shell_cmd[1], create=True)
-    except ValueError as e:
-        log.critical('Bad repository ({}): {}'.format(shell_cmd[1], e))
-        abort(1)
-
-    if shell_cmd[0] == 'git-upload-pack':
-        safe_args = [shell_cmd[0], '--strict',   # enforce strict
-                     str(repo_path)]
-    elif shell_cmd[0] == 'git-receive-pack':
-        safe_args = [shell_cmd[0], str(repo_path)]
-    elif shell_cmd[0] == 'git-upload-archive':
-        safe_args = [shell_cmd[0], str(repo_path)]
-    else:
-        log.critical('Command {} is whitelisted, but not explicitly handled.'
-                     .format(shell_cmd[0]))
-        abort(1)
-
-    log.debug('Repository path is {}'.format(repo_path))
-
-    log.debug('Executing {!r}', safe_args)
-    binary = safe_args[0]  # we use path through execlP
-    os.execlp(binary, *safe_args)
+    binary = cmd[0]  # we use path through execlp
+    #os.execlp(binary, *safe_args)
 
 
 @cli.group('user',
