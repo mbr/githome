@@ -31,6 +31,17 @@ class GitHome(object):
         self.bind = create_engine(self.dsn)
         self.session = scoped_session(sessionmaker(bind=self.bind))
         self.config = Config(ConfigSetting, self.session)
+        self._update_authkeys = False
+
+    def create_user(self, name):
+        user = User(name=name)
+        self.session.add(user)
+        return user
+
+    def delete_user(self, name):
+        rc = self.session.query(User).filter_by(name=name).delete()
+        self._update_authkeys = True
+        return rc >= 1
 
     def save(self):
         self.session.commit()

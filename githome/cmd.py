@@ -176,40 +176,33 @@ def show_auth_keys(obj):
     click.echo(gh.get_authorized_keys_block())
 
 
-@cli.group('user')
+@cli.group('user',
+           help='Manage user accounts')
 def user_group():
     pass
 
 
-@user_group.command('add')
+@user_group.command('add',
+                    help='Create new user account')
 @click.argument('name')
 @click.pass_obj
 def create_user(obj, name):
     gh = obj['githome']
-    if gh.get_user_by_name(name):
-        log.critical('User {} already exists'.format(name))
-        abort(1)
 
-    user = User(name=name)
-    gh.session.add(user)
-    gh.session.commit()
+    user = gh.create_user(name)
+    gh.save()
 
     log.info('Created user {}'.format(user.name))
 
 
-@user_group.command('delete')
+@user_group.command('rm')
 @click.argument('name')
 @click.pass_obj
 def delete_user(obj, name):
     gh = obj['githome']
-
-    user = gh.get_user_by_name(name)
-    if user:
-        gh.session.delete(user)
-        gh.session.commit()
-        log.info('Removed user {}'.format(user.name))
-
-        gh.update_authorized_keys()
+    if gh.delete_user(name):
+        log.info('Removed user {}'.format(name))
+        gh.save()
 
 
 @user_group.command('list')
