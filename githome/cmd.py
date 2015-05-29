@@ -276,6 +276,14 @@ def show_auth_keys(obj):
     click.echo(gh.get_authorized_keys_block())
 
 
+@key_group.command('update-ak',
+                   help='Update authorized_keys file')
+@click.pass_obj
+def update_auth_keys(obj):
+    gh = obj['githome']
+    gh.update_authorized_keys()
+
+
 @cli.group('config', help='Adjust configuration and settings')
 def config_group():
     pass
