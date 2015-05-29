@@ -70,7 +70,7 @@ def cli(ctx, githome, loglevel):
         return
 
     # check if the home is valid
-    if not GitHome.check(githome):
+    if not GitHome.check(ctx.obj['githome_path']):
         log.critical('Not a valid githome: "{}"; use {} init to initialize it '
                      'first.'.format(githome, 'githome'))
         abort(1)
