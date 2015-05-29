@@ -202,8 +202,9 @@ def create_user(obj, name):
 def delete_user(obj, name):
     gh = obj['githome']
     if gh.delete_user(name):
-        log.info('Removed user {}'.format(name))
         gh.save()
+
+        log.info('Removed user {}'.format(name))
 
 
 @user_group.command('list',
