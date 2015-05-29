@@ -33,6 +33,13 @@ class GitHome(object):
         self.config = Config(ConfigSetting, self.session)
         self._update_authkeys = False
 
+    def save(self):
+        if self._update_authkeys:
+            self._update_authkeys = False
+            log.critical('missing implementation for _update_authkeys')
+
+        self.session.commit()
+
     def create_user(self, name):
         user = User(name=name)
         self.session.add(user)
