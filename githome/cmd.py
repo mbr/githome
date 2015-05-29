@@ -44,8 +44,9 @@ class RegEx(click.ParamType):
         self.exp = re.compile(exp)
 
     def convert(self, value, param, ctx):
-        if not self.exp.match(param):
+        if not self.exp.match(value):
             raise click.BadParameter('Invalid value')
+        return value
 
 
 def abort(status=1):
