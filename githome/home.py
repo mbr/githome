@@ -76,7 +76,7 @@ class GitHome(object):
         pkeys = []
         for key in self.session.query(PublicKey):
             args = [
-                self.get_config('githome_executable'),
+                self.config['local']['githome_executable'],
             ]
 
             if debug:
@@ -107,16 +107,16 @@ class GitHome(object):
         return '\n'.join(pkey.to_pubkey_line() for pkey in pkeys)
 
     def update_authorized_keys(self, force=False):
-        if not self.get_config('update_authorized_keys') and not force:
+        if not self.config['local']['update_authorized_keys'] and not force:
             log.debug('Not updating authorized_keys, disabled in config')
             return
 
-        ak = Path(self.get_config('authorized_keys_file'))
+        ak = Path(self.config['local']['authorized_keys_file'])
         if not ak.exists():
             raise RuntimeError('authorized_keys_file does not exist: {}'.
                                format(ak))
 
-        id = self.get_config('githome_id')
+        id = self.config['githome']['id']
         start_marker = ('### SECTION ADDED BY GITHOME, DO NOT EDIT\n'
                         '### githome location: {}\n'
                         '### id: {}').format(self.path.absolute(), id)
