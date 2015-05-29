@@ -56,9 +56,11 @@ class GitHome(object):
         return user
 
     def delete_user(self, name):
-        rc = self.session.query(User).filter_by(name=name).delete()
+        user = self.get_user_by_name(name)
+        self.session.delete(user)
         self._update_authkeys = True
-        return rc >= 1
+
+        return True
 
     def iter_users(self, order_by=User.name):
         qry = self.session.query(User)
