@@ -18,6 +18,27 @@ from .model import User, PublicKey, ConfigSetting
 log = Logger('cli')
 
 
+class ConfigValue(click.ParamType):
+    def convert(self, value, param, ctx):
+        # type for configuration value given on the command line
+        if value.isdigit():
+            return int(value)
+
+        if value.lower() in ('on', 'yes', 'true'):
+            return True
+        elif value.lower() in ('off', 'no', 'false'):
+            return False
+
+        return value
+
+
+class ConfigName(click.ParamType):
+    def convert(self, value, param, ctx):
+        if not '.' in value:
+            raise click.BadParameter('Configuration name must include .')
+        return value
+
+
 def abort(status=1):
     sys.exit(status)
 
@@ -269,39 +290,36 @@ def list_keys(obj):
         ))
 
 
-@cli.group('config')
+@cli.group('config', help='Adjust configuration and settings')
 def config_group():
     pass
 
 
-@config_group.command('set')
-@click.argument('key')
-@click.argument('value')
+@config_group.command('set', help='Set a configuration value')
+@click.argument('key', type=ConfigName())
+@click.argument('value', type=ConfigValue())
 @click.pass_obj
 def set_config(obj, key, value):
     gh = obj['githome']
 
-    try:
-        gh.set_config(key, value)
-    except KeyError:
-        log.critical('No such configuration value: {}'.format(key))
-        abort(1)
-    gh.session.commit()
+    gh.config.cset(key, value)
+    gh.save()
 
     log.info('Configuration set: {}={}'.format(key, value))
 
 
-@config_group.command('list')
+@config_group.command('show',
+                      help='Display configuration values in .ini format')
 @click.pass_obj
-def list_config(obj):
+def show_config(obj):
     gh = obj['githome']
 
-    for cs in gh.session.query(ConfigSetting):
-        click.echo('{cs.key:25s} {cs.value}'.format(cs=cs))
+    click.echo(ini_format(gh.config))
 
 
 @cli.command(help='Initialize a new githome in an empty directy')
-@click.option('--config', '-c', multiple=True, nargs=2,
+@click.option('--config', '-c', multiple=True,
+              type=(ConfigName(), ConfigValue()),
               help='Additional initial configuration settings, in the form '
                    'of: section.key value.')
 @click.argument('dir', default=None, required=False)
@@ -323,16 +341,6 @@ def init(obj, config, dir):
 
     # set configuration options
     for name, value in config:
-        if '.' not in name:
-            raise click.BadParameter('No section given for {}'.format(name))
-
-        if value.isnumeric():
-            value = int(value)
-
-        if value in ('on', 'yes', 'true'):
-            value = True
-        elif value in ('off', 'no', 'false'):
-            value = False
 
         gh.config.cset(name, value)
 
