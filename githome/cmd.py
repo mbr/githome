@@ -12,7 +12,7 @@ from sqlacfg.format import ini_format
 from sshkeys import Key as SSHKey
 
 from .home import GitHome
-from .model import User, PublicKey, ConfigSetting
+from .model import User, PublicKey
 
 
 log = Logger('cli')
