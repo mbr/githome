@@ -66,9 +66,9 @@ def cli(ctx, githome, loglevel):
         loglevel = logbook.INFO
 
     # setup sqlalchemy loglevel
-    if loglevel is logging.DEBUG:
+    if loglevel is logbook.DEBUG:
         redirect_logging()
-        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+        logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
 
     # setup console logging
     NullHandler().push_application()
