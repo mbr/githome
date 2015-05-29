@@ -227,6 +227,12 @@ class GitHome(object):
             os.path.expanduser('~/.ssh/authorized_keys')
         )
         local['githome_executable'] = str(Path(sys.argv[0]).absolute())
+        local['authorized_keys_start_marker'] = (
+            '# -- added by githome {}, do not remove these markers --\n'
+        )
+        local['authorized_keys_end_marker'] = (
+            '# -- end githome {}. keep trailing newline! --\n'
+        )
         gh.config['githome']['id'] = str(uuid.uuid4())
 
         gh.save()
