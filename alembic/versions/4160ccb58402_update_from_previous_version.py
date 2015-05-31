@@ -1,12 +1,3 @@
-"""update from previous version
-
-Revision ID: 4160ccb58402
-Revises:
-Create Date: 2015-05-31 15:47:24.100086
-
-"""
-
-# revision identifiers, used by Alembic.
 revision = '4160ccb58402'
 down_revision = None
 branch_labels = None
