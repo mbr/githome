@@ -85,7 +85,7 @@ def shell(obj, username):
     log.debug('Executing {!r}', cmd)
 
     binary = cmd[0]  # we use path through execlp
-    #os.execlp(binary, *safe_args)
+    os.execlp(binary, *cmd)
 
 
 @cli.group('user',
