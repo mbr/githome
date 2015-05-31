@@ -242,12 +242,14 @@ def show_config(obj):
               type=(ConfigName(), ConfigValue()),
               help='Additional initial configuration settings, in the form '
                    'of: section.key value.')
-@click.argument('dir', default=None, required=False)
+@click.option('--force', '-f', is_flag=True, default=False,
+              help='Force creation on non-empty directory')
+@click.argument('dir', required=False)
 @click.pass_obj
-def init(obj, config, dir):
+def init(obj, config, dir, force):
     path = obj['githome_path'] if dir is None else pathlib.Path(dir)
 
-    if path.exists():
+    if path.exists() and not force:
         if [p for p in path.iterdir()]:
             log.critical('Directory {} exists and is not empty'.format(path))
             abort(1)
