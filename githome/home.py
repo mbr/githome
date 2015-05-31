@@ -15,29 +15,11 @@ from sqlalchemy.orm.exc import NoResultFound
 from .migration import get_upgrade_path
 from .model import Base, User, PublicKey, ConfigSetting
 from .util import block_update, sanitize_path
+from .exc import (UserNotFoundError, KeyNotFoundError, PermissionDenied,
+                  NoSuchRepository, GitHomeError)
 
 
 log = logbook.Logger('githome')
-
-
-class GitHomeError(Exception):
-    pass
-
-
-class UserNotFoundError(GitHomeError):
-    pass
-
-
-class KeyNotFoundError(GitHomeError):
-    pass
-
-
-class PermissionDenied(GitHomeError):
-    pass
-
-
-class NoSuchRepository(GitHomeError):
-    pass
 
 
 class GitHome(object):
