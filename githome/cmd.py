@@ -249,8 +249,8 @@ def show_config(obj):
 def init(obj, config, dir, force):
     path = obj['githome_path'] if dir is None else pathlib.Path(dir)
 
-    if path.exists() and not force:
-        if [p for p in path.iterdir()]:
+    if path.exists():
+        if [p for p in path.iterdir()] and not force:
             log.critical('Directory {} exists and is not empty'.format(path))
             abort(1)
     else:
