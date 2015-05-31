@@ -238,7 +238,7 @@ def show_config(obj):
 
 
 @cli.command(help='Initialize a new githome in an empty directy')
-@click.option('--config', '-c', multiple=True,
+@click.option('--config', '-c', multiple=True, metavar='name value',
               type=(ConfigName(), ConfigValue()),
               help='Additional initial configuration settings, in the form '
                    'of: section.key value.')
