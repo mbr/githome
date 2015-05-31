@@ -13,7 +13,6 @@ from sqlacfg.format import ini_format
 from sshkeys import Key as SSHKey
 
 from .home import GitHome
-from .migration import DB_REVISIONS
 from .util import ConfigName, ConfigValue, RegEx
 
 
