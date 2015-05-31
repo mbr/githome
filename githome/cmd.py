@@ -269,31 +269,3 @@ def init(obj, config, dir, force):
         gh.save()
 
     log.debug('Configuration:\n{}'.format(ini_format(gh.config)))
-
-
-@cli.command('db-upgrade', help='Upgrade to latest db version')
-@click.option('--dry-run', '-n', help='Do nothing, just output version info')
-@click.option('--force', '-f', help='No confirm', is_flag=True)
-@click.pass_obj
-def db_upgrade(obj, dry_run, force):
-    gh = obj['githome']
-
-    db_rev = gh.get_db_revision()
-    latest = len(DB_REVISIONS)-1
-
-    log.info('Database revision: {} (latest: {})'.format(
-        db_rev, latest,
-    ))
-
-    if db_rev == latest:
-        log.info('No upgrade needed')
-        return
-
-    if dry_run or not (force or click.confirm(
-        'You are about to upgrade to the latest database version (from {} to '
-        '{}). This action cannot be undone - ensure you have a backup of the '
-        'database file! Continue?'.format(db_rev, latest)
-    )):
-        return
-
-    gh.upgrade_db()
