@@ -11,6 +11,9 @@ from sqlacfg import Config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
+from sshkeys import Key as SSHKey
+import trollius as asyncio
+from trollius import From
 
 from .migration import get_upgrade_path
 from .model import Base, User, PublicKey, ConfigSetting
@@ -270,3 +273,71 @@ class GitHome(object):
         with self.bind.connect() as con, con.begin() as trans:
             for mfunc in get_upgrade_path(self):
                 mfunc(trans)
+
+    def run_server(self, debug=False):
+        @asyncio.coroutine
+        def gh_server():
+            socket = str(self.path / self.config['local']['gh_client_socket'])
+
+            log.info('Server socket: {}'.format(socket))
+            if os.path.exists(socket):
+                log.debug('Removing stale socket')
+                os.unlink(socket)
+
+            yield From(asyncio.start_unix_server(gh_proto, socket))
+
+        @asyncio.coroutine
+        def gh_proto(client_reader, client_writer):
+            con_id = uuid.uuid4()
+            log = logbook.Logger('client-{}'.format(con_id))
+            log.debug('connected')
+
+            while True:
+                keytype = (yield From(client_reader.readline())).strip()
+                key = (yield From(client_reader.readline())).strip()
+
+                if not keytype or not key:
+                    log.warning('incomplete call')
+                    break
+
+                # check if key is valid
+                try:
+                    pkey = SSHKey.from_pubkey_line('{} {}'.format(keytype,
+                                                                  key))
+                except Exception:
+                    log.warning('invalid key')
+                    yield From(client_writer.write('E invalid public key\n'))
+                    break
+
+                log.info('{}, {}'.format(pkey.type, pkey.readable_fingerprint))
+
+                if False:
+                    # check if key is authorized
+                    yield From(client_writer.write('E access denied\n'))
+                    break
+
+                yield From(client_writer.write('OK\n'))
+                # write OK byte
+                yield From(client_writer.write('ls\n'))
+                yield From(client_writer.write('foo bar\n'))
+                yield From(client_writer.write('foo\n'))
+                yield From(client_writer.write('bar\n'))
+                yield From(client_writer.write('.'))
+                break
+
+            # FIXME: isn't there a better interface for this?
+            log.debug('closing connection')
+            client_writer._transport.close()
+
+        loop = asyncio.get_event_loop()
+
+        # debug
+        loop.set_debug(debug)
+
+        # start server
+        loop.run_until_complete(gh_server())
+
+        try:
+            loop.run_forever()
+        finally:
+            loop.close()

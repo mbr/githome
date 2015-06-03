@@ -87,6 +87,13 @@ def shell(obj, username):
     os.execlp(binary, *cmd)
 
 
+@cli.command('run-server')
+@click.pass_obj
+def run_server(obj):
+    gh = obj['githome']
+    gh.run_server(debug=True)
+
+
 @cli.group('user',
            help='Manage user accounts')
 def user_group():
