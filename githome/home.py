@@ -246,6 +246,10 @@ class GitHome(object):
         local['authorized_keys_end_marker'] = (
             '# -- end githome {}. keep trailing newline! --\n'
         )
+        local['use_gh_client'] = True
+        gh_client = str(Path(__file__).with_name('gh_client'))
+        local['gh_client_executable'] = gh_client
+
         gh.config['githome']['id'] = str(uuid.uuid4())
 
         gh.save()
