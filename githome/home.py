@@ -23,7 +23,6 @@ log = logbook.Logger('githome')
 
 
 class GitHome(object):
-    LOG_PATH = 'log'
     REPOS_PATH = 'repos'
     DB_PATH = 'githome.sqlite'
 
