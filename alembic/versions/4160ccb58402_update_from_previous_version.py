@@ -9,11 +9,11 @@ from sqlalchemy.sql import table, column
 
 
 sections = {
-        'update_authorized_keys': 'local',
-        'authorized_keys_file': 'local',
-        'githome_executable': 'local',
-        'githome_id': 'githome',
-    }
+    'update_authorized_keys': 'local',
+    'authorized_keys_file': 'local',
+    'githome_executable': 'local',
+    'githome_id': 'githome',
+}
 
 
 def upgrade():
