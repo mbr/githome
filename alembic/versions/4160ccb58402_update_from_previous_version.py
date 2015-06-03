@@ -3,6 +3,9 @@ down_revision = None
 branch_labels = None
 depends_on = None
 
+import json
+import os
+
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.sql import table, column
@@ -44,11 +47,18 @@ def upgrade():
         } for key, value in con.execute(old_cfg.select())]
     op.bulk_insert(new_cfg, new_recs)
 
+    import githome
+    gh_client = os.path.join(os.path.dirname(githome.__file__), 'gh_client')
+
     op.bulk_insert(new_cfg, [
         {'section': 'local', 'key': 'authorized_keys_start_marker',
          'data': r'"# -- added by githome {}, do not remove these markers --\n"'},
         {'section': 'local', 'key': 'authorized_keys_end_marker',
          'data': r'"# -- end githome {}. keep trailing newline! --\n"'},
+        {'section': 'local',  'key': 'use_gh_client',
+         'data': json.dumps(True)},
+        {'section': 'local', 'key': 'gh_client_executable',
+         'data': json.dumps(gh_client)},
     ])
 
     # rename config key githome_id to id
