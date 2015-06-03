@@ -57,6 +57,8 @@ def upgrade():
          'data': r'"# -- end githome {}. keep trailing newline! --\n"'},
         {'section': 'local',  'key': 'use_gh_client',
          'data': json.dumps(True)},
+        {'section': 'local',  'key': 'gh_client_socket',
+         'data': json.dumps('ghclient.sock')},
         {'section': 'local', 'key': 'gh_client_executable',
          'data': json.dumps(gh_client)},
     ])

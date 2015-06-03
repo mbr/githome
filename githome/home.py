@@ -249,6 +249,7 @@ class GitHome(object):
         local['use_gh_client'] = True
         gh_client = str(Path(__file__).with_name('gh_client'))
         local['gh_client_executable'] = gh_client
+        local['gh_client_socket'] = 'ghclient.sock'
 
         gh.config['githome']['id'] = str(uuid.uuid4())
 
