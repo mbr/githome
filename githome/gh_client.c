@@ -124,22 +124,21 @@ void check_status(int fd) {
 }
 
 
-int connect_socket(char *path) {
+int connect_socket_fail(char *path) {
   int sock;
   struct sockaddr_un srv;
 
   sock = socket(AF_UNIX, SOCK_STREAM, 0);
   if (sock < 0) {
     perror("failed to open socket");
-    return -1;
+    exit(EXIT_FAILURE);
   }
 
   srv.sun_family = AF_UNIX;
   strncpy(srv.sun_path, path, sizeof(srv.sun_path) - 1);
 
   if (connect(sock, (struct sockaddr*) &srv, sizeof(srv)) < 0) {
-    close(sock);
-    return -1;
+    exit_error("could not connect to githome server");
   }
 
   return sock;
@@ -163,11 +162,7 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  sock = connect_socket(argv[optind]);
-  if (sock < 0) {
-    perror("connect_socket");
-    return EXIT_FAILURE;
-  }
+  sock = connect_socket_fail(argv[optind]);
 
   /* send the fingerprint */
   send_str_fail(sock, argv[optind + 1]);
