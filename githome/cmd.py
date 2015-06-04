@@ -7,7 +7,8 @@ import shlex
 import sys
 
 import click
-from logbook import StderrHandler, NullHandler, Logger
+from logbook import NullHandler, Logger
+from logbook.more import ColorizedStderrHandler
 from logbook.compat import redirect_logging
 from sqlacfg.format import ini_format
 from sshkeys import Key as SSHKey
@@ -41,7 +42,9 @@ def cli(ctx, githome, loglevel):
 
     # setup console logging
     NullHandler().push_application()
-    StderrHandler(level=loglevel).push_application()
+    handler = ColorizedStderrHandler(level=loglevel)
+    handler.format_string = '{record.channel}: {record.message}'
+    handler.push_application()
 
     ctx.obj['githome_path'] = pathlib.Path(githome)
 
