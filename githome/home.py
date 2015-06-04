@@ -263,13 +263,6 @@ class GitHome(object):
     def __repr__(self):
         return '{0.__class__.__name__}(path={0.path!r})'.format(self)
 
-    def get_db_revision(self):
-        with self.bind.connect() as con:
-            if self.bind.dialect.has_table(con, 'githome_meta'):
-                raise NotImplementedError
-
-        return 0
-
     def upgrade_db(self):
         with self.bind.connect() as con, con.begin() as trans:
             for mfunc in get_upgrade_path(self):
