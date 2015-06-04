@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
 
   if (argc < optind + 1) {
     fprintf(stderr, "usage: %s [-n] SOCKET [ARGS]...\n", basename(argv[0]));
-    exit(1);
+    exit(EXIT_FAILURE);
   }
 
   sock = connect_socket(argv[optind]);
