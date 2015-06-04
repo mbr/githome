@@ -13,6 +13,12 @@
 #define ARG_LEN 1024
 
 
+void exit_error(char *msg) {
+  fprintf(stderr, "%s\n", msg);
+  exit(EXIT_FAILURE);
+}
+
+
 int send_all(int socket, void *buf, size_t len) {
   char *ptr = (char*) buf;
   while(len > 0) {
@@ -77,12 +83,6 @@ void* fmalloc(size_t size) {
   }
 
   return p;
-}
-
-
-void exit_error(char *msg) {
-  fprintf(stderr, "%s\n", msg);
-  exit(EXIT_FAILURE);
 }
 
 
