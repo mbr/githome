@@ -16,7 +16,6 @@ from sqlalchemy.orm.exc import NoResultFound
 import trollius as asyncio
 from trollius import From
 
-from .migration import get_upgrade_path
 from .model import Base, User, PublicKey, ConfigSetting
 from .util import block_update, sanitize_path
 from .exc import (UserNotFoundError, KeyNotFoundError, PermissionDenied,
@@ -278,11 +277,6 @@ class GitHome(object):
 
     def __repr__(self):
         return '{0.__class__.__name__}(path={0.path!r})'.format(self)
-
-    def upgrade_db(self):
-        with self.bind.connect() as con, con.begin() as trans:
-            for mfunc in get_upgrade_path(self):
-                mfunc(trans)
 
     def run_server(self, debug=False):
         @asyncio.coroutine
