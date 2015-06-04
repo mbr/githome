@@ -1,0 +1,13 @@
+[Unit]
+Description=githome server
+Wants=ssh.service
+
+[Service]
+ExecStart=/opt/githome/bin/githome --githome /srv/githome run-server
+RestartSec=1
+Restart=always
+User=git
+Group=git
+
+[Install]
+WantedBy=multi-user.target
