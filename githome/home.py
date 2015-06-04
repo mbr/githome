@@ -125,16 +125,22 @@ class GitHome(object):
     def get_authorized_keys_block(self):
         pkeys = []
         for key in self.session.query(PublicKey):
-            args = [
-                self.config['local']['githome_executable'],
-            ]
+            if self.config['local']['use_gh_client']:
+                pkey = key.as_pkey()
+                args = [self.config['local']['gh_client_executable'],
+                        self.config['local']['gh_client_socket']]
+                args.extend(pkey.to_pubkey_line().split(' '))
+            else:
+                args = [
+                    self.config['local']['githome_executable'],
+                ]
 
-            args.extend([
-                '--githome',
-                str(self.path.absolute()),
-                'shell',
-                key.user.name,
-            ])
+                args.extend([
+                    '--githome',
+                    str(self.path.absolute()),
+                    'shell',
+                    key.user.name,
+                ])
 
             full_cmd = ' '.join("'{}'".format(p) for p in args)
 
