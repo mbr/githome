@@ -24,21 +24,27 @@ int send_all(int socket, void *buf, size_t len) {
   while(len > 0) {
     int n = write(socket, ptr, len);
     if (n < 1) {
-      if (n == 0) return -1;
+      if (n == 0) return 0;
       return n;
     }
     ptr += n;
     len -= n;
   }
 
-  return 0;
+  return 1;
 }
 
 
 void send_all_fail(int socket, void *buf, size_t len) {
-  if (! send_all(socket, buf, len)) {
-    perror("send_all");
-    exit(EXIT_FAILURE);
+  switch(send_all(socket, buf, len)) {
+    case 1:
+      return;
+    case 0:
+      exit_error("send_all: unexpected connection close while sending");
+      break;
+    default:
+      perror("send_all");
+      exit(EXIT_FAILURE);
   }
 }
 
