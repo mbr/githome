@@ -29,6 +29,14 @@ int send_all(int socket, void *buf, size_t len) {
 }
 
 
+void send_all_fail(int socket, void *buf, size_t len) {
+  if (! send_all(socket, buf, len)) {
+    perror("send_all");
+    exit(EXIT_FAILURE);
+  }
+}
+
+
 int readline(int fd, char *buf, size_t n) {
   ssize_t r, total = 0;
 
