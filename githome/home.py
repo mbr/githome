@@ -46,7 +46,6 @@ class GitHome(object):
 
         if self._update_authkeys:
             self._update_authkeys = False
-            log.critical('missing implementation for _update_authkeys')
 
             if not self.config['local']['update_authorized_keys']:
                 log.info('Not updating authorized_keys, disabled in config')
