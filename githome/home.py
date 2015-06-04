@@ -335,6 +335,7 @@ class GitHome(object):
                     return
                 else:
                     # wrapped in else, for defensive reasons
+                    log.info('Authorized for {!r}'.format(clean_command))
 
                     # write OK byte
                     yield From(client_writer.write('OK\n'))
