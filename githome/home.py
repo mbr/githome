@@ -188,7 +188,7 @@ class GitHome(object):
 
         if len(command) < 2:
             raise PermissionDenied(
-                log.critical('Missing repository parameter')
+                'Missing repository parameter'
             )
 
         # FIXME: check user read rights to repository
