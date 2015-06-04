@@ -26,7 +26,7 @@ class InstallWithTools(install):
 
 setup(
     name='githome',
-    version='0.3.dev1',
+    version='0.4.dev1',
     description='A tiny server for your git repositories, allowing '
                 'configurable levels of access for multiple users.',
     long_description=read('README.rst'),
