@@ -194,7 +194,7 @@ class GitHome(object):
 
         # FIXME: check user read rights to repository
         # FIXME: check if user may create repositories
-        can_create = False
+        can_create = True
 
         repo_path = self.get_repo(sanitize_path(command[1]), create=can_create)
         # FIXME: if necessary, check write rights to repository
