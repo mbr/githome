@@ -11,6 +11,7 @@
 
 #define MAX_ARGS 32
 #define ARG_LEN 1024
+#define CMD_ENV_VAR "SSH_ORIGINAL_COMMAND"
 
 
 void exit_error(char *msg) {
@@ -35,8 +36,14 @@ int send_all(int socket, void *buf, size_t len) {
 }
 
 
-void send_all_fail(int socket, void *buf, size_t len) {
-  switch(send_all(socket, buf, len)) {
+void send_str_fail(int socket, char *s) {
+  if (! s) {
+    exit_error("attempted to send NULL string");
+  }
+
+  size_t len = strlen(s);
+
+  switch(send_all(socket, s, len)) {
     case 1:
       return;
     case 0:
@@ -151,8 +158,8 @@ int main(int argc, char **argv) {
     }
   }
 
-  if (argc < optind + 1) {
-    fprintf(stderr, "usage: %s [-n] SOCKET [ARGS]...\n", basename(argv[0]));
+  if (argc != optind + 2) {
+    fprintf(stderr, "usage: %s [-n] SOCKET KEY_FINGERPRINT\n", basename(argv[0]));
     exit(EXIT_FAILURE);
   }
 
@@ -162,14 +169,17 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  int i;
-  for (i = optind+1; i < argc; ++i) {
-    send_all_fail(sock, argv[i], strlen(argv[i]));
-    send_all_fail(sock, "\n", 1);
-  }
+  /* send the fingerprint */
+  send_str_fail(sock, argv[optind + 1]);
+  send_str_fail(sock, "\n");
 
-  /* write terminating newline */
-  send_all_fail(sock, "\n", 1);
+  /* send command */
+  char *env_cmd = getenv(CMD_ENV_VAR);
+  if (! env_cmd) {
+    exit_error("Environment variable " CMD_ENV_VAR " not set.");
+  }
+  send_str_fail(sock, env_cmd);
+  send_str_fail(sock, "\n");
 
   /* read status */
   check_status(sock);

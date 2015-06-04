@@ -2,6 +2,7 @@ from binascii import hexlify, unhexlify
 from contextlib import closing
 import os
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 import uuid
@@ -297,13 +298,7 @@ class GitHome(object):
                     log.warning('unexpected connection close')
                     return
 
-                cmd = []
-                while True:
-                    line = (yield From(client_reader.readline())).strip()
-                    if not line:
-                        break
-                    cmd.append(line)
-
+                cmd = (yield From(client_reader.readline())).strip()
                 log.debug('Read command: {!r}'.format(cmd))
 
                 try:
@@ -312,7 +307,8 @@ class GitHome(object):
                     log.info('authenticated as {}'.format(user.name))
 
                     # check if user is allowed to execute command
-                    clean_command = self.authorize_command(user, cmd)
+                    clean_command = self.authorize_command(user,
+                                                           shlex.split(cmd))
                 except Exception as e:
                     # deny on every exception, no exceptions!
                     log.warning('permission denied: {}'.format(e))
