@@ -81,7 +81,7 @@ void print_args(int argc, char **argv) {
 }
 
 
-void* fmalloc(size_t size) {
+void* malloc_fail(size_t size) {
   void* p = malloc(size);
   if (! p) {
     perror("malloc");
@@ -176,13 +176,13 @@ int main(int argc, char **argv) {
 
   /* read returned arguments */
   /* extra space for zero-termination of argument list */
-  char **nargv = fmalloc(sizeof(char*) * (MAX_ARGS + 1));
+  char **nargv = malloc_fail(sizeof(char*) * (MAX_ARGS + 1));
 
   ssize_t r;
   int nargc = 0;
 
   for(;;) {
-    char *buffer = fmalloc(sizeof(char) * ARG_LEN);
+    char *buffer = malloc_fail(sizeof(char) * ARG_LEN);
 
     r = readline(sock, buffer, ARG_LEN);
 
