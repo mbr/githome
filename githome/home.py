@@ -106,7 +106,7 @@ class GitHome(object):
             else:
                 raise NoSuchRepository('Repository {} no found and not '
                                        'creating.'.format(rel_path))
-        return path
+        return path.absolute()
 
     def get_user_by_name(self, name):
         try:
