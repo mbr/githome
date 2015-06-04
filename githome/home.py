@@ -127,8 +127,9 @@ class GitHome(object):
         for key in self.session.query(PublicKey):
             if self.config['local']['use_gh_client']:
                 pkey = key.as_pkey()
+                spath = (self.path / self.config['local']['gh_client_socket'])
                 args = [self.config['local']['gh_client_executable'],
-                        self.config['local']['gh_client_socket'],
+                        str(spath.absolute()),
                         hexlify(pkey.fingerprint)]
             else:
                 args = [
