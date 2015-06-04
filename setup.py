@@ -47,5 +47,6 @@ setup(
     },
     cmdclass={
         'install': InstallWithTools,
-    }
+    },
+    zip_safe=False,
 )
