@@ -158,15 +158,8 @@ int main(int argc, char **argv) {
 
   int i;
   for (i = optind+1; i < argc; ++i) {
-    if (send_all(sock, argv[i], strlen(argv[i]))) {
-      perror("failed to send");
-      return EXIT_FAILURE;
-    }
-
-    if (write(sock, "\n", 1) != 1) {
-      perror("failed to send");
-      return EXIT_FAILURE;
-    }
+    send_all_fail(sock, argv[i], strlen(argv[i]));
+    send_all_fail(sock, "\n", 1);
   }
 
   /* read status */
