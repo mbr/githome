@@ -150,7 +150,7 @@ class GitHome(object):
 
             pkeys.append(pkey)
 
-        return '\n'.join(pkey.to_pubkey_line() for pkey in pkeys)
+        return ''.join(pkey.to_pubkey_line() + '\n' for pkey in pkeys)
 
     def update_authorized_keys(self):
         ak = Path(self.config['local']['authorized_keys_file'])

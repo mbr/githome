@@ -205,7 +205,7 @@ def delete_key(obj, fingerprints):
 def show_auth_keys(obj):
     gh = obj['githome']
 
-    click.echo(gh.get_authorized_keys_block())
+    click.echo(gh.get_authorized_keys_block(), nl=False)
 
 
 @key_group.command('update-ak',
