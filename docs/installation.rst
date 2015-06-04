@@ -18,4 +18,5 @@ things need to happen:
    show``.
 5. Add users and keys. See ``githome --help``.
 6. If you are using ``gh_client`` (if ``local.use_gh_client`` is enabled),
-   set up your init system to start ``githome server`` (again, see ``--help``).
+   set up your init system to start ``githome run-server`` (again, see
+   ``--help``).
