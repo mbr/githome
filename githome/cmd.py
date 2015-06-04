@@ -66,25 +66,30 @@ def cli(ctx, githome, loglevel):
 def shell(obj, username):
     gh = obj['githome']
 
-    # get user
-    user = gh.get_user_by_name(username)
+    try:
+        # get user
+        user = gh.get_user_by_name(username)
 
-    log = Logger('githome-shell [{}]'.format(user.name))
+        log = Logger('githome-shell [{}]'.format(user.name))
 
-    # we've got our user, now authorize him or not
-    shell_cmd = shlex.split(os.environ.get('SSH_ORIGINAL_COMMAND', ''))
-    log.debug('SSH_ORIGINAL_COMMAND {!r}'.format(shell_cmd))
+        # we've got our user, now authorize him or not
+        shell_cmd = shlex.split(os.environ.get('SSH_ORIGINAL_COMMAND', ''))
+        log.debug('SSH_ORIGINAL_COMMAND {!r}'.format(shell_cmd))
 
-    if not shell_cmd:
-        log.critical('No shell command given')
+        if not shell_cmd:
+            log.critical('No shell command given')
+            abort(1)
+
+        cmd = gh.authorize_command(user, shell_cmd)
+
+        log.debug('Executing {!r}', cmd)
+
+        binary = cmd[0]  # we use path through execlp
+    except Exception as e:
+        log.error(str(e))
         abort(1)
-
-    cmd = gh.authorize_command(user, shell_cmd)
-
-    log.debug('Executing {!r}', cmd)
-
-    binary = cmd[0]  # we use path through execlp
-    os.execlp(binary, *cmd)
+    else:
+        os.execlp(binary, *cmd)
 
 
 @cli.command('run-server')
