@@ -84,7 +84,8 @@ which is a very small and fast client written in C needs to be launched. It
 will connect to the running server via UNIX domain sockets and wait for an OK
 or an authentication error.
 
-If no error occurs, it will execvp_ to the appropriate git server process.
+If no error occurs, it will execvp_ to the appropriate git server process. The
+C client takes only 15 ms to start up on a slow SD card, which is a lot faster.
 
 
 Alternate design
