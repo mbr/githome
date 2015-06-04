@@ -10,7 +10,7 @@ import uuid
 from future.utils import raise_from
 import logbook
 from sqlacfg import Config
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Table, Column, String
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 import trollius as asyncio
@@ -241,6 +241,16 @@ class GitHome(object):
 
         # create database
         Base.metadata.create_all(bind=gh.bind)
+
+        # create alembic metadata table
+        avtable = Table('alembic_version', Base.metadata,
+                        Column('version_num', String(32), nullable=False)
+                        )
+        avtable.create(bind=gh.bind)
+        qry = (avtable.insert()
+                      .values(version_num='4160ccb58402'))
+        with gh.bind.begin() as con:
+            con.execute(qry)
 
         # create initial configuration
         local = gh.config['local']
