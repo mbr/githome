@@ -162,6 +162,9 @@ int main(int argc, char **argv) {
     send_all_fail(sock, "\n", 1);
   }
 
+  /* write terminating newline */
+  send_all_fail(sock, "\n", 1);
+
   /* read status */
   check_status(sock);
 
