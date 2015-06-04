@@ -1,4 +1,5 @@
 from binascii import hexlify
+from contextlib import closing
 import os
 from pathlib import Path
 import subprocess
@@ -292,13 +293,22 @@ class GitHome(object):
             log = logbook.Logger('client-{}'.format(con_id))
             log.debug('connected')
 
-            while True:
+            with closing(client_writer._transport):
                 keytype = (yield From(client_reader.readline())).strip()
                 key = (yield From(client_reader.readline())).strip()
 
+                cmd = []
+                while True:
+                    line = (yield From(client_reader.readline())).strip()
+                    if not line:
+                        break
+                    cmd.append(line)
+
+                log.debug('Read command: {!r}'.format(cmd))
+
                 if not keytype or not key:
                     log.warning('incomplete call')
-                    break
+                    return
 
                 # check if key is valid
                 try:
@@ -307,27 +317,31 @@ class GitHome(object):
                 except Exception:
                     log.warning('invalid key')
                     yield From(client_writer.write('E invalid public key\n'))
-                    break
+                    return
 
                 log.info('{}, {}'.format(pkey.type, pkey.readable_fingerprint))
 
-                if False:
-                    # check if key is authorized
+                try:
+                    key = self.get_key_by_fingerprint(pkey.fingerprint)
+                    user = key.user
+                    log.info('authenticated as {}'.format(user.name))
+
+                    # check if user is allowed to execute command
+                    clean_command = self.authorize_command(user, cmd)
+                except Exception as e:
+                    # deny on every exception, no exceptions!
+                    log.warning('permission denied: {}'.format(e))
                     yield From(client_writer.write('E access denied\n'))
-                    break
+                    return
+                else:
+                    # wrapped in else, for defensive reasons
 
-                yield From(client_writer.write('OK\n'))
-                # write OK byte
-                yield From(client_writer.write('ls\n'))
-                yield From(client_writer.write('foo bar\n'))
-                yield From(client_writer.write('foo\n'))
-                yield From(client_writer.write('bar\n'))
-                yield From(client_writer.write('.'))
-                break
+                    # write OK byte
+                    yield From(client_writer.write('OK\n'))
 
-            # FIXME: isn't there a better interface for this?
-            log.debug('closing connection')
-            client_writer._transport.close()
+                    # actualy reply
+                    for part in clean_command:
+                        yield From(client_writer.write(part + '\n'))
 
         loop = asyncio.get_event_loop()
 
