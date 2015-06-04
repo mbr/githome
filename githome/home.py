@@ -1,4 +1,4 @@
-from binascii import hexlify
+from binascii import hexlify, unhexlify
 from contextlib import closing
 import os
 from pathlib import Path
@@ -12,7 +12,6 @@ from sqlacfg import Config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
-from sshkeys import Key as SSHKey
 import trollius as asyncio
 from trollius import From
 
@@ -128,8 +127,8 @@ class GitHome(object):
             if self.config['local']['use_gh_client']:
                 pkey = key.as_pkey()
                 args = [self.config['local']['gh_client_executable'],
-                        self.config['local']['gh_client_socket']]
-                args.extend(pkey.to_pubkey_line().split(' '))
+                        self.config['local']['gh_client_socket'],
+                        hexlify(pkey.fingerprint)]
             else:
                 args = [
                     self.config['local']['githome_executable'],
@@ -292,8 +291,11 @@ class GitHome(object):
             log.debug('connected')
 
             with closing(client_writer._transport):
-                keytype = (yield From(client_reader.readline())).strip()
-                key = (yield From(client_reader.readline())).strip()
+                keyfp = (yield From(client_reader.readline())).strip()
+
+                if not keyfp:
+                    log.warning('unexpected connection close')
+                    return
 
                 cmd = []
                 while True:
@@ -304,23 +306,8 @@ class GitHome(object):
 
                 log.debug('Read command: {!r}'.format(cmd))
 
-                if not keytype or not key:
-                    log.warning('incomplete call')
-                    return
-
-                # check if key is valid
                 try:
-                    pkey = SSHKey.from_pubkey_line('{} {}'.format(keytype,
-                                                                  key))
-                except Exception:
-                    log.warning('invalid key')
-                    yield From(client_writer.write('E invalid public key\n'))
-                    return
-
-                log.info('{}, {}'.format(pkey.type, pkey.readable_fingerprint))
-
-                try:
-                    key = self.get_key_by_fingerprint(pkey.fingerprint)
+                    key = self.get_key_by_fingerprint(unhexlify(keyfp))
                     user = key.user
                     log.info('authenticated as {}'.format(user.name))
 
