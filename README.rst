@@ -1,10 +1,10 @@
 githome
 =======
 
-.. warning:: githome is currently under heavy development. The code is fine,
-             though it is simply missing essential features at the moment;
-             notable these include setting permissions for individual users.
-             Any help testing is very welcome.
+.. warning:: githome has been superseded by gogs (see http://gogs.io),
+             which has acceptable performance on a Raspberry Pi 2 at least,
+             even though it lacks the SSH -> C -> git speedup implement by
+             githome.
 
 
 githome is an authorization system for hosting git_ repositories. It allows to
